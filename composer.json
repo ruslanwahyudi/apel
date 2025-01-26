@@ -13,7 +13,11 @@
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
         "laravel/ui": "^4.6",
-        "spatie/laravel-permission": "^6.10"
+        "spatie/laravel-permission": "^6.10",
+	"symfony/css-selector": "^6.0",
+	"symfony/event-dispatcher": "^6.0",
+	"symfony/string": "^6.0",
+	"symfony/console": "^6.0"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.14",
@@ -33,7 +37,7 @@
             "Database\\Seeders\\": "database/seeders/"
         },
         "files": [
-            "app/helpers.php"
+            "app/Helpers.php"
         ]
     },
     "autoload-dev": {
