@@ -263,7 +263,7 @@ class AuthController extends Controller
     public function uploadSelfie(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'selfie' => 'required|image|mimes:jpeg,png,jpg|max:2048'
+            'selfie' => 'required|image|mimes:jpeg,png,jpg|max:500'
         ]);
 
         if ($validator->fails()) {
