@@ -228,6 +228,10 @@ class AuthController extends Controller
                     ->where('dusun_id', $user->dusun_id)
                     ->get();
 
+        foreach ($pengajuan as $item) {
+            $item->profile->foto_selfie = $item->profile->getFotoSelfieUrlAttribute();
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Daftar pengajuan user',
