@@ -218,6 +218,22 @@ class AuthController extends Controller
         ]);
     }
 
+    public function getDaftarPengajuanUser(Request $request)
+    {
+        $user = $request->user();
+        // $profile = UserProfile::where('user_id', $user->id)->first();
+
+        $pengajuan = User::where('status', 'S')
+                    ->where('dusun_id', $user->dusun_id)
+                    ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar pengajuan user',
+            'data' => $pengajuan
+        ]);
+    }
+
     
     public function loadUser(Request $request)
     {

@@ -37,8 +37,14 @@ class DusunController extends Controller
             'jumlah_lk' => 'required|integer'
         ]);
 
-        Dusun::create($request->all());
+        
 
+        $dusun = Dusun::create($request->all());
+        if ($dusun) {
+            $user = User::find($request->user_id);
+            $user->dusun_id = $dusun->id;
+            $user->save();
+        }
         return redirect()
             ->route('admin.dusun')
             ->with('success', 'Dusun berhasil ditambahkan');
@@ -60,7 +66,13 @@ class DusunController extends Controller
             'jumlah_lk' => 'required|integer'
         ]);
 
-        $dusun->update($request->all());
+        $dusunn = $dusun->update($request->all());
+
+        if ($dusunn) {
+            $user = User::find($request->user_id);
+            $user->dusun_id = $dusun->id;
+            $user->save();
+        }
 
         return redirect()
             ->route('admin.dusun')
