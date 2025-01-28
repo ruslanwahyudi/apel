@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\LayananController;
 use App\Http\Controllers\Api\SettingHomeController;
 use App\Http\Controllers\Api\KontakController;
+use App\Http\Controllers\Api\DusunController;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -67,6 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Verification routes
     Route::post('upload-selfie', [AuthController::class, 'uploadSelfie']);
+    Route::apiResource('daftardusun', SettingHomeController::class);
     Route::get('verification-status', [AuthController::class, 'checkVerificationStatus']);
     Route::get('profile/load', [AuthController::class, 'loadUser']);
     
@@ -104,6 +107,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Test notification route
     Route::post('notifications/test-send', [NotificationController::class, 'sendTestNotification']);
     Route::post('notifications/test-send-all', [NotificationController::class, 'sendTestNotificationAll']);
+
+    // Dusun routes
+    
 });
 
 // Tambahkan route ini sementara untuk debugging

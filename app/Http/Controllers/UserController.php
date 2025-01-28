@@ -35,11 +35,16 @@ class UserController extends Controller
             'role_id' => 'required|exists:roles_type,id',
         ]);
 
+        $nama_role = Roles_type::find($request->role_id)->name;
+        $status = $nama_role == 'User' ? 'N' : 'Y';
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make('a'),
+            'status' => $status,
             'role_id' => $request->role_id,
+            'role' => $nama_role,
         ]);
 
         // Mengembalikan tampilan HTML setelah menyimpan role
@@ -69,11 +74,14 @@ class UserController extends Controller
             'role_id' => 'required|exists:roles_type,id',
         ]);
 
+        $nama_role = Roles_type::find($request->role_id)->name;
+
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
             // 'password' => Hash::make($request->password),
             'role_id' => $request->role_id,
+            'role' => $nama_role,
         ]);
 
         // return response()->json(['message' => 'Role berhasil diperbarui']);

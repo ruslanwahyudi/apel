@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Dusun;
 use App\Models\User;
 use App\Models\Setting;
 use App\Models\informasi\ProfilDesa;
@@ -155,6 +156,23 @@ class SettingHomeController extends Controller
                 'success' => true,
                 'message' => 'Data berhasil dimuat',
                 'data' => $lokasi
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getDaftarDusun()
+    {
+        try {
+            $dusun = Dusun::with('user')->get();
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil dimuat',
+                'data' => $dusun
             ]);
         } catch (\Exception $e) {
             return response()->json([

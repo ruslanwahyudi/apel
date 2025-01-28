@@ -4,3 +4,6 @@ lalu untuk duk_jenis_pelayanan join dengan duk_identitas_pemohon, juga join deng
 untuk tiap data duk_identitas_pemohon pemohon, saya ingin mengambil data dari duk_data_identitas_pemohon
 untuk tiap data duk_syarat_dokumen, saya ingin mengambil data dari duk_dokumen_pengajuan
 buatkan query untuk mengambil data tersebut
+
+
+buatkan migration, model, dan controller dengan kebutuhan data kolom : id, nama_dusun, user_id (refer to table users), jumlah_kk, jumlah_pr, jumlah_lk. tiru pembuatan model dan controller dengan cara meniru dari KategoriSuratController

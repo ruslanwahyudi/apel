@@ -32,6 +32,7 @@ use App\Models\blog\Kategori;
 use App\Models\informasi\ProfilDesa;
 use App\Models\Layanan\JenisLayanan;
 use App\Http\Controllers\adm\RegisterSuratController;
+use App\Http\Controllers\adm\DusunController;
 use App\Http\Controllers\KontakController;
 
 /*
@@ -244,6 +245,16 @@ Route::middleware(['auth', 'role:admin,kepala'])->group(function () {
     Route::delete('informasi/profil/destroy/{profil}', [ProfilDesaController::class, 'destroy'])->name('info.profil.destroy');
     Route::get('informasi/profil/search/{search}', [ProfilDesaController::class, 'search'])->name('info.profil.search');
     
+
+    // dusun
+    Route::get('admin/dusun', [DusunController::class, 'index'])->name('admin.dusun');
+    Route::get('admin/dusun/create', [DusunController::class, 'create'])->name('admin.dusun.create');
+    Route::post('admin/dusun', [DusunController::class, 'store'])->name('admin.dusun.store');
+    Route::get('admin/dusun/edit/{dusun}', [DusunController::class, 'edit'])->name('admin.dusun.edit');
+    Route::put('admin/dusun/update/{dusun}', [DusunController::class, 'update'])->name('admin.dusun.update');
+    Route::delete('admin/dusun/destroy/{dusun}', [DusunController::class, 'destroy'])->name('admin.dusun.destroy');
+    Route::get('admin/dusun/search/{search}', [DusunController::class, 'search'])->name('admin.dusun.search');
+
     // RKPDES
     Route::get('informasi/rkpdes', [RKPDESController::class, 'index'])->name('info.rkpdes');
     Route::get('informasi/rkpdes/create', [RKPDESController::class, 'create'])->name('info.rkpdes.create');
