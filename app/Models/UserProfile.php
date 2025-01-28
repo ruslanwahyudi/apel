@@ -46,6 +46,6 @@ class UserProfile extends Model
 
     public function getFotoSelfieUrlAttribute()
     {
-        return url('storage/selfies/' . $this->foto_selfie);
+        return url('storage/' . $this->foto_selfie);
     }
 }
