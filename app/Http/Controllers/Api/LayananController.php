@@ -602,6 +602,7 @@ class LayananController extends Controller
                 ]);
 
                 $user = User::find($layanan->user_id);
+                \Log::info($user);
                 
                 if ($user && $user->fcm_token) {
                     // Generate access token
