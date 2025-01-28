@@ -470,10 +470,32 @@ class LayananController extends Controller
         ], 200);
     }
 
-    public function reject(Request $request, $id)
+    public function reject(Request $request)
     {
-        $layanan = Pelayanan::findOrFail($id);
-        $layanan->update(['status_layanan' => 5]);
+        $validator = Validator::make($request->all(), [
+            'service_id' => 'required|exists:duk_pelayanan,id',
+            'reason' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            // return response()->json($validator->errors(), 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $layanan = Pelayanan::findOrFail($request->service_id);
+        $layanan->status_layanan = 5;
+        $layanan->catatan = $request->reason;
+        $layanan->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Layanan berhasil di kembalikan ke user',
+            'data' => $layanan
+        ], 200);
     }
 
     public function tandatangan(Request $request, $id)
