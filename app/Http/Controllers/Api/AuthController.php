@@ -285,8 +285,8 @@ class AuthController extends Controller
 
         if ($request->hasFile('selfie')) {
             // Hapus foto lama jika ada
-            if ($profile->foto) {
-                Storage::delete('public/selfies/' . $profile->foto);
+            if ($profile->foto_selfie) {
+                Storage::delete('public/selfies/' . $profile->foto_selfie);
             }
 
             $file = $request->file('selfie');
