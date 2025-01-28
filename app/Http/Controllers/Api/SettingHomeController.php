@@ -168,7 +168,7 @@ class SettingHomeController extends Controller
     public function getDaftarDusun()
     {
         try {
-            $dusun = Dusun::with('user')->get();
+            $dusun = Dusun::with('user')->where('role', 'Kepala Dusun')->get();
             return response()->json([
                 'success' => true,
                 'message' => 'Data berhasil dimuat',
