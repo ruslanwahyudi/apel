@@ -43,4 +43,9 @@ class UserProfile extends Model
         // Jika bukan URL lengkap, gabungkan dengan base URL
         return url('storage/profile/' . $this->foto);
     }
+
+    public function getFotoSelfieUrlAttribute()
+    {
+        return url('storage/selfies/' . $this->foto_selfie);
+    }
 }
