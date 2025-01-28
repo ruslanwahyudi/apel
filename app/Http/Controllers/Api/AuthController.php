@@ -293,12 +293,14 @@ class AuthController extends Controller
             $filename = 'selfies/' . time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
             $file->storeAs('public/selfies', $filename);
 
-            $profile->update([
-                'foto_selfie' => $filename
-            ]);
+            $profile->foto_selfie = $filename;
+
+            $profile->save();
 
             // Update user profile
-            $user->update(['status' => 'S', 'dusun_id' => $request->dusun_id]);
+            $user->status = 'S';
+            $user->dusun_id = $request->dusun_id;
+            $user->save();
 
             // Kirim push notification
             try {
@@ -310,7 +312,7 @@ class AuthController extends Controller
                     'user_id' => $kepalaDusun->id,
                     'title' => 'Verifikasi Registrasi Selfie',
                     'message' => "Pengajuan selfie telah dikirim",
-                    'type' => 'selfie'
+                    'type' => 'auto'
                 ]);
 
                 $user = User::find($kepalaDusun->id);
