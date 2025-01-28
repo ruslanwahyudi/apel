@@ -19,7 +19,7 @@ class ProdukController extends Controller
                 'deskripsi' => $item->deskripsi,
                 'harga' => $item->harga,
                 'kontak' => $item->kontak,
-                'gambar' => $item->gambar ? asset('storage/produk/' . $item->gambar) : null,
+                'gambar' => $item->gambar ? asset($item->gambar) : null,
                 'created_at' => $item->created_at->format('Y-m-d H:i:s')
             ];
         });
@@ -41,7 +41,7 @@ class ProdukController extends Controller
             'deskripsi' => $produk->deskripsi,
             'harga' => $produk->harga,
             'kontak' => $produk->kontak,
-            'gambar' => $produk->gambar ? asset('storage/produk/' . $produk->gambar) : null,
+            'gambar' => $produk->gambar ? asset($produk->gambar) : null,
             'created_at' => $produk->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $produk->updated_at->format('Y-m-d H:i:s')
         ];
