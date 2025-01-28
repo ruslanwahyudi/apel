@@ -487,6 +487,7 @@ class LayananController extends Controller
         }
 
         $layanan = Pelayanan::with('jenisPelayanan')->findOrFail($request->service_id);
+        \Log::info($layanan);
         $layanan->status_layanan = 5;
         $layanan->catatan = $request->reason;
         $upd = $layanan->save();
