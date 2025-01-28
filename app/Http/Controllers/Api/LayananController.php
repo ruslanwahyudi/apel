@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\adm\KategoriSurat;
 use App\Models\adm\RegisterSurat;
+use App\Models\Dusun;
 use App\Models\Layanan\JenisLayanan;
 use App\Models\Layanan\Pelayanan;
 use App\Models\Layanan\DataIdentitasPemohon;
@@ -255,12 +256,94 @@ class LayananController extends Controller
         // }
 
         $layanan = Pelayanan::findOrFail($id);
+        $user = User::find($layanan->user_id);
 
         $statusLayanan = MasterOption::where(['value' => 'Belum Diproses', 'type' => 'status_layanan'])->first();
 
-        $layanan->update(['status_layanan' => $statusLayanan->id]);
+        $upd = $layanan->update(['status_layanan' => $statusLayanan->id]);
         
         $layanan->load(['jenisPelayanan', 'dataIdentitas', 'dokumenPengajuan', 'statusLayanan']);
+
+        if($upd){
+            // Kirim notifikasi ke user
+            try {
+                // get kepala dusun id
+                $kepalaDusun = Dusun::where('id', $user->dusun_id)->first()->user_id;
+                $kepalaDusun = User::find($kepalaDusun);
+
+                $notification = Notifications::create([
+                    'user_id' => $kepalaDusun->id,
+                    'title' => 'Verifikasi Registrasi Selfie',
+                    'message' => "Pengajuan selfie telah dikirim",
+                    'type' => 'auto'
+                ]);
+
+                $user = User::find($kepalaDusun->id);
+                
+                if ($user && $user->fcm_token) {
+                    // Generate access token
+                    $client = new Client();
+                    $client->setAuthConfig([
+                        "type" => "service_account",
+                        "project_id" => config('services.firebase.project_id'),
+                        "private_key_id" => "private_key_id",
+                        "private_key" => config('services.firebase.private_key'),
+                        "client_email" => config('services.firebase.client_email'),
+                        "client_id" => "client_id",
+                        "auth_uri" => "https://accounts.google.com/o/oauth2/auth",
+                        "token_uri" => "https://oauth2.googleapis.com/token",
+                        "auth_provider_x509_cert_url" => "https://www.googleapis.com/oauth2/v1/certs",
+                        "client_x509_cert_url" => "https://www.googleapis.com/robot/v1/metadata/x509/".config('services.firebase.client_email')
+                    ]);
+                    
+                    $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
+                    $client->fetchAccessTokenWithAssertion();
+                    $accessToken = $client->getAccessToken()['access_token'];
+
+                    // Kirim ke FCM
+                    $response = Http::withHeaders([
+                        'Authorization' => 'Bearer ' . $accessToken,
+                        'Content-Type' => 'application/json',
+                    ])->post('https://fcm.googleapis.com/v1/projects/'.config('services.firebase.project_id').'/messages:send', [
+                        'message' => [
+                            'token' => $user->fcm_token,
+                            'notification' => [
+                                'title' => $notification->title,
+                                'body' => $notification->message
+                            ],
+                            'data' => [
+                                'notification_id' => (string)$notification->id,
+                                'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
+                            ],
+                            'android' => [
+                                'notification' => [
+                                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
+                                ]
+                            ],
+                            'apns' => [
+                                'payload' => [
+                                    'aps' => [
+                                        'sound' => 'default'
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]);
+
+                    \Log::info('FCM Response for selfie approval:', [
+                        'user_id' => $kepalaDusun->id,
+                        'status' => $response->status(),
+                        'body' => $response->json()
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error sending notification for selfie approval:', [
+                    'user_id' => $kepalaDusun->id,
+                    'error' => $e->getMessage()
+                ]);
+                // Lanjutkan eksekusi meski notifikasi gagal
+            }
+        }
 
         return response()->json([
             'success' => true,
