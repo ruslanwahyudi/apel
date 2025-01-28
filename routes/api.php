@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\LayananController;
 use App\Http\Controllers\Api\SettingHomeController;
 use App\Http\Controllers\Api\KontakController;
 use App\Http\Controllers\Api\DusunController;
+use App\Http\Controllers\Api\PembangunanController;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Route;
 
@@ -139,3 +140,7 @@ Route::get('/settings/privacy-policy', [SettingHomeController::class, 'getPrivac
 Route::get('/settings/contact', [SettingHomeController::class, 'getContact']);
 Route::get('/settings/about', [SettingHomeController::class, 'getAbout']);
 Route::get('/settings/lokasi', [SettingHomeController::class, 'getLokasi']);
+
+// Pembangunan API Routes
+Route::get('pembangunan', [PembangunanController::class, 'index']);
+Route::get('pembangunan/{id}', [PembangunanController::class, 'show']);

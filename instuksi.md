@@ -6,4 +6,6 @@ untuk tiap data duk_syarat_dokumen, saya ingin mengambil data dari duk_dokumen_p
 buatkan query untuk mengambil data tersebut
 
 
-buatkan migration, model, dan controller dengan kebutuhan data kolom : id, nama_dusun, user_id (refer to table users), jumlah_kk, jumlah_pr, jumlah_lk. tiru pembuatan model dan controller dengan cara meniru dari KategoriSuratController
+buatkan migration, model, dan controller dengan kebutuhan data kolom : id, nama, user_id (refer to table users), jumlah_kk, jumlah_pr, jumlah_lk. tiru pembuatan model dan controller dengan cara meniru dari KategoriSuratController
+
+sekarang buatkan model berdasarkan migration yang sudah dibuat, dan buatkan controller berdasarkan model yang sudah dibuat. buatkan view untuk (index, create, edit) data dari controller yang sudah dibuat. dengan mengacu pada metode (index, create, edit) logic yang sudah pernah dibuat sebelumnya, contoh dusuncontroller. buatkan sesuai kebutuhan fitur update progres proyek pembangunan.

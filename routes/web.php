@@ -33,6 +33,8 @@ use App\Models\informasi\ProfilDesa;
 use App\Models\Layanan\JenisLayanan;
 use App\Http\Controllers\adm\RegisterSuratController;
 use App\Http\Controllers\adm\DusunController;
+use App\Http\Controllers\Admin\KegiatanPembangunanController;
+use App\Http\Controllers\Admin\ProgresPembangunanController;
 use App\Http\Controllers\KontakController;
 
 /*
@@ -373,7 +375,21 @@ Route::middleware(['auth', 'role:admin,kepala'])->group(function () {
     // data desa
     Route::get('data/data-kependudukan', ['', 'index'])->name('data.kependudukan');
 
+    // Pembangunan routes
+    Route::get('admin/pembangunan', [KegiatanPembangunanController::class, 'index'])->name('admin.pembangunan');
+    Route::get('admin/pembangunan/create', [KegiatanPembangunanController::class, 'create'])->name('admin.pembangunan.create');
+    Route::post('admin/pembangunan', [KegiatanPembangunanController::class, 'store'])->name('admin.pembangunan.store');
+    Route::get('admin/pembangunan/show/{kegiatan}', [KegiatanPembangunanController::class, 'show'])->name('admin.pembangunan.show');
+    Route::get('admin/pembangunan/edit/{kegiatan}', [KegiatanPembangunanController::class, 'edit'])->name('admin.pembangunan.edit');
+    Route::put('admin/pembangunan/update/{kegiatan}', [KegiatanPembangunanController::class, 'update'])->name('admin.pembangunan.update');
+    Route::get('admin/pembangunan/{kegiatan}', [KegiatanPembangunanController::class, 'destroy'])->name('admin.pembangunan.destroy');
     
+
+    // Progres Pembangunan Routes
+    Route::get('admin/pembangunan/progres/create/{kegiatan}', [ProgresPembangunanController::class, 'create'])
+        ->name('admin.pembangunan.progres.create');
+    Route::post('admin/pembangunan/progres/store/{kegiatan}', [ProgresPembangunanController::class, 'store'])
+        ->name('admin.pembangunan.progres.store');
 });
 
 Route::get('test_generate_no_surat', function () {
