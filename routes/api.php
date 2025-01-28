@@ -69,7 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Verification routes
     Route::post('upload-selfie', [AuthController::class, 'uploadSelfie']);
-    Route::apiResource('daftardusun', [SettingHomeController::class, 'getDaftarDusun']);
+    Route::get('daftardusun', [SettingHomeController::class, 'getDaftarDusun']);
     Route::get('verification-status', [AuthController::class, 'checkVerificationStatus']);
     Route::get('profile/load', [AuthController::class, 'loadUser']);
     
