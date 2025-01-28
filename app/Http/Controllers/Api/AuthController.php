@@ -268,7 +268,8 @@ class AuthController extends Controller
     public function uploadSelfie(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'selfie' => 'required|image|mimes:jpeg,png,jpg|max:500'
+            'selfie' => 'required|image|mimes:jpeg,png,jpg|max:500',
+            'dusun_id' => 'required|exists:dusun,id'
         ]);
 
         if ($validator->fails()) {
@@ -285,7 +286,7 @@ class AuthController extends Controller
             }
 
             $file = $request->file('selfie');
-            $filename = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
+            $filename = 'selfies/' . time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
             $file->storeAs('public/selfies', $filename);
 
             $profile->update([
@@ -293,7 +294,7 @@ class AuthController extends Controller
             ]);
 
             // Update user profile
-            $user->update(['status' => 'S']);
+            $user->update(['status' => 'S', 'dusun_id' => $request->dusun_id]);
         }
 
         return response()->json([
