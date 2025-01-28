@@ -583,8 +583,99 @@ class LayananController extends Controller
 
     public function tandatangan(Request $request, $id)
     {
-        $layanan = Pelayanan::findOrFail($id);
-        $layanan->update(['status_layanan' => 6]);
+        $layanan = Pelayanan::with('jenisPelayanan')->findOrFail($id);
+
+        $statusLayanan = MasterOption::where(['value' => 'Selesai', 'type' => 'status_layanan'])->first();
+
+        $upd = $layanan->update(['status_layanan' => $statusLayanan->id]);
+        
+        if($upd){
+            // Kirim notifikasi ke user
+            try {
+                $notification = Notifications::create([
+                    'user_id' => $layanan->user_id,
+                    'title' => 'Layanan Selesai',
+                    'message' => "Pengajuan layanan " . 
+                        ($layanan->jenisPelayanan ? $layanan->jenisPelayanan->nama_pelayanan : '') . 
+                        " Anda telah selesai di tandatangani, silahkan ambil surat di kantor",
+                    'type' => 'layanan'
+                ]);
+
+                $user = User::find($layanan->user_id);
+                
+                if ($user && $user->fcm_token) {
+                    // Generate access token
+                    $client = new Client();
+                    $client->setAuthConfig([
+                        "type" => "service_account",
+                        "project_id" => config('services.firebase.project_id'),
+                        "private_key_id" => "private_key_id",
+                        "private_key" => config('services.firebase.private_key'),
+                        "client_email" => config('services.firebase.client_email'),
+                        "client_id" => "client_id",
+                        "auth_uri" => "https://accounts.google.com/o/oauth2/auth",
+                        "token_uri" => "https://oauth2.googleapis.com/token",
+                        "auth_provider_x509_cert_url" => "https://www.googleapis.com/oauth2/v1/certs",
+                        "client_x509_cert_url" => "https://www.googleapis.com/robot/v1/metadata/x509/".config('services.firebase.client_email')
+                    ]);
+                    
+                    $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
+                    $client->fetchAccessTokenWithAssertion();
+                    $accessToken = $client->getAccessToken()['access_token'];
+
+                    // Kirim ke FCM
+                    $response = Http::withHeaders([
+                        'Authorization' => 'Bearer ' . $accessToken,
+                        'Content-Type' => 'application/json',
+                    ])->post('https://fcm.googleapis.com/v1/projects/'.config('services.firebase.project_id').'/messages:send', [
+                        'message' => [
+                            'token' => $user->fcm_token,
+                            'notification' => [
+                                'title' => $notification->title,
+                                'body' => $notification->message
+                            ],
+                            'data' => [
+                                'notification_id' => (string)$notification->id,
+                                'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
+                            ],
+                            'android' => [
+                                'notification' => [
+                                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
+                                ]
+                            ],
+                            'apns' => [
+                                'payload' => [
+                                    'aps' => [
+                                        'sound' => 'default'
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]);
+
+                    \Log::info('FCM Response for layanan tandatangan:', [
+                        'layanan_id' => $layanan->id,
+                        'user_id' => $layanan->user_id,
+                        'status' => $response->status(),
+                        'body' => $response->json()
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error sending notification for layanan tandatangan:', [
+                    'layanan_id' => $layanan->id,
+                    'error' => $e->getMessage()
+                ]);
+                // Lanjutkan eksekusi meski notifikasi gagal
+            }
+        }
+
+        $layanan->load(['jenisPelayanan', 'dataIdentitas', 'dokumenPengajuan', 'statusLayanan']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Layanan berhasil di tandatangani',
+            'data' => $layanan
+        ], 200);
     }
 
     public function update(Request $request, $id)
