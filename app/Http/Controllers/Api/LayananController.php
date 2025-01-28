@@ -265,7 +265,7 @@ class LayananController extends Controller
         $layanan->load(['jenisPelayanan', 'dataIdentitas', 'dokumenPengajuan', 'statusLayanan']);
 
         if($upd){
-            // Kirim notifikasi ke user
+            // Kirim notifikasi ke kepala dusun
             try {
                 // get kepala dusun id
                 $kepalaDusun = Dusun::where('id', $user->dusun_id)->first()->user_id;
@@ -273,8 +273,8 @@ class LayananController extends Controller
 
                 $notification = Notifications::create([
                     'user_id' => $kepalaDusun->id,
-                    'title' => 'Verifikasi Registrasi Selfie',
-                    'message' => "Pengajuan selfie telah dikirim",
+                    'title' => 'Layanan Baru',
+                    'message' => "Pengajuan layanan telah dikirim ke akun Anda",
                     'type' => 'auto'
                 ]);
 
