@@ -357,7 +357,7 @@ class AuthController extends Controller
             }
 
             $file = $request->file('selfie');
-            $filename = 'selfies/' . time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
+            $filename = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
             $file->storeAs('public/selfies', $filename);
 
             $profile->foto_selfie = $filename;

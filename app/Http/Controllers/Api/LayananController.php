@@ -32,7 +32,11 @@ class LayananController extends Controller
             // Filter berdasarkan role
             if ($user->role === 'user') {
                 $query->where('user_id', $userId);
-            } else {
+            } else if ($user->role === 'kepala dusun'){
+                $query->where('status_layanan', '=', '6');
+            } else if ($user->role === 'kepala desa'){
+                $query->where('status_layanan', '=', '7');
+            } else { // admin
                 $query->where('status_layanan', '<>', '5');
             }
 
