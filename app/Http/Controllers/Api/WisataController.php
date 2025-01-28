@@ -21,7 +21,7 @@ class WisataController extends Controller
                 'jam_operasional' => $item->jam_operasional,
                 'harga_tiket' => $item->harga_tiket,
                 'kontak' => $item->kontak,
-                'gambar' => $item->gambar ? asset('storage/wisata/' . $item->gambar) : null,
+                'gambar' => $item->gambar ? asset($item->gambar) : null,
                 'created_at' => $item->created_at->format('Y-m-d H:i:s')
             ];
         });
