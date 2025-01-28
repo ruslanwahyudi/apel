@@ -355,7 +355,7 @@ class LayananController extends Controller
     public function approve(Request $request, $id)
     {
 
-        $layanan = Pelayanan::findOrFail($id);
+        $layanan = Pelayanan::with('jenisPelayanan')->findOrFail($id);
 
         $statusLayanan = MasterOption::where(['value' => 'Sedang Diproses', 'type' => 'status_layanan'])->first();
 
@@ -486,7 +486,7 @@ class LayananController extends Controller
             ], 422);
         }
 
-        $layanan = Pelayanan::findOrFail($request->service_id);
+        $layanan = Pelayanan::with('jenisPelayanan')->findOrFail($request->service_id);
         $layanan->status_layanan = 5;
         $layanan->catatan = $request->reason;
         $upd = $layanan->save();
