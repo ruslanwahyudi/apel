@@ -267,13 +267,6 @@ class LayananController extends Controller
 
     public function approve(Request $request, $id)
     {
-        // $validator = Validator::make($request->all(), [
-        //     'id' => 'required|exists:duk_pelayanan,id',
-        // ]);
-
-        // if ($validator->fails()) {
-        //     return response()->json($validator->errors(), 422);
-        // }
 
         $layanan = Pelayanan::findOrFail($id);
 
@@ -388,6 +381,18 @@ class LayananController extends Controller
             'message' => 'Layanan berhasil di approve',
             'data' => $layanan
         ], 200);
+    }
+
+    public function reject(Request $request, $id)
+    {
+        $layanan = Pelayanan::findOrFail($id);
+        $layanan->update(['status_layanan' => 5]);
+    }
+
+    public function tandatangan(Request $request, $id)
+    {
+        $layanan = Pelayanan::findOrFail($id);
+        $layanan->update(['status_layanan' => 6]);
     }
 
     public function update(Request $request, $id)

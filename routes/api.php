@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\SettingHomeController;
 use App\Http\Controllers\Api\KontakController;
 use App\Http\Controllers\Api\DusunController;
 use App\Http\Controllers\Api\PembangunanController;
+use App\Http\Controllers\Api\ProdukController;
+use App\Http\Controllers\Api\WisataController;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Route;
 
@@ -96,8 +98,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('layanan/store', [LayananController::class, 'store']);
     Route::post('layanan/upload-identitas', [LayananController::class, 'uploadIdentitas']);
     Route::post('layanan/upload-dokumen', [LayananController::class, 'uploadDokumen']);
-    Route::post('layanan/finalisasi/{id}', [LayananController::class, 'finalisasi']);
-    Route::post('layanan/approve/{id}', [LayananController::class, 'approve']);
+    Route::get('layanan/finalisasi/{id}', [LayananController::class, 'finalisasi']);
+    Route::get('layanan/approve/{id}', [LayananController::class, 'approve']);
+    Route::get('layanan/tandatangan/{id}', [LayananController::class, 'tandatangan']);
+    Route::get('layanan/reject/{id}', [LayananController::class, 'reject']);
+
+    
     Route::delete('layanan/{id}', [LayananController::class, 'destroy']);
     
     // Notifikasi routes
@@ -144,3 +150,11 @@ Route::get('/settings/lokasi', [SettingHomeController::class, 'getLokasi']);
 // Pembangunan API Routes
 Route::get('pembangunan', [PembangunanController::class, 'index']);
 Route::get('pembangunan/{id}', [PembangunanController::class, 'show']);
+
+// Produk API Routes
+Route::get('produk', [ProdukController::class, 'index']);
+Route::get('produk/{id}', [ProdukController::class, 'show']);
+
+// Wisata API Routes  
+Route::get('wisata', [WisataController::class, 'index']);
+Route::get('wisata/{id}', [WisataController::class, 'show']);
