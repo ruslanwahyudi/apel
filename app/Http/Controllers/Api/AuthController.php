@@ -223,7 +223,7 @@ class AuthController extends Controller
         $user = $request->user();
         // $profile = UserProfile::where('user_id', $user->id)->first();
 
-        $pengajuan = User::with('profile')
+        $pengajuan = User::with('profile', 'dusun')
                     ->where('status', 'S')
                     ->where('dusun_id', $user->dusun_id)
                     ->get();
