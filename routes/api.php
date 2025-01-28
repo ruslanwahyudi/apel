@@ -74,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('profile/load', [AuthController::class, 'loadUser']);
     Route::get('profile/daftar-pengajuan-user', [AuthController::class, 'getDaftarPengajuanUser']);
     Route::get('profile/detail-pengajuan-user/{id}', [AuthController::class, 'getDetailPengajuanUser']);
+    Route::post('profile/approve-pengajuan-user', [AuthController::class, 'approvePengajuanUser']);
     
     // Admin only routes
     Route::middleware('role:admin')->group(function () {

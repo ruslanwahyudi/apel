@@ -248,6 +248,38 @@ class AuthController extends Controller
         ]);
     }
 
+    public function approvePengajuanUser(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $user = User::find($request->user_id);
+            $user->status = 'Y';
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pengajuan user berhasil diapprove',
+                'data' => $user
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error approving user: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     
     public function loadUser(Request $request)
     {
