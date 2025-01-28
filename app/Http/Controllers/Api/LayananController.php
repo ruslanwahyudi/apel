@@ -389,7 +389,7 @@ class LayananController extends Controller
                 $notification = Notifications::create([
                     'user_id' => $layanan->user_id,
                     'title' => 'Layanan Disetujui',
-                    'message' => "Pengajuan layanan {$layanan->jenis_pelayanan->nama} Anda telah disetujui",
+                    'message' => "Pengajuan layanan {$layanan->jenis_pelayanan->nama_pelayanan} Anda telah disetujui",
                     'type' => 'layanan'
                 ]);
 
@@ -498,7 +498,7 @@ class LayananController extends Controller
                 $notification = Notifications::create([
                     'user_id' => $layanan->user_id,
                     'title' => 'Layanan Ditolak',
-                    'message' => "Pengajuan layanan {$layanan->jenis_pelayanan->nama} Anda telah ditolak",
+                    'message' => "Pengajuan layanan {$layanan->jenis_pelayanan->nama_pelayanan} Anda telah ditolak",
                     'type' => 'layanan'
                 ]);
 
