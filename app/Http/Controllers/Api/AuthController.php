@@ -234,6 +234,20 @@ class AuthController extends Controller
         ]);
     }
 
+    public function getDetailPengajuanUser(Request $request, $id)
+    {
+        $pengajuan = User::find($id);
+        $profile = UserProfile::where('user_id', $pengajuan->id)->first();
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail pengajuan user',
+            'data' => [
+                'user' => $pengajuan,
+                'profile' => $profile
+            ]
+        ]);
+    }
+
     
     public function loadUser(Request $request)
     {

@@ -73,6 +73,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('verification-status', [AuthController::class, 'checkVerificationStatus']);
     Route::get('profile/load', [AuthController::class, 'loadUser']);
     Route::get('profile/daftar-pengajuan-user', [AuthController::class, 'getDaftarPengajuanUser']);
+    Route::get('profile/detail-pengajuan-user/{id}', [AuthController::class, 'getDetailPengajuanUser']);
     
     // Admin only routes
     Route::middleware('role:admin')->group(function () {
