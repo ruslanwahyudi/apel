@@ -502,7 +502,7 @@ class LayananController extends Controller
                     'title' => 'Layanan Ditolak',
                     'message' => "Pengajuan layanan " . 
                         ($layanan->jenisPelayanan ? $layanan->jenisPelayanan->nama_pelayanan : '') . 
-                        " Anda telah ditolak, karena " . $request->reason,
+                        " Anda telah ditolak, karena " . $request->reason.", Silahkan lengkapi kembali",
                     'type' => 'layanan'
                 ]);
 
