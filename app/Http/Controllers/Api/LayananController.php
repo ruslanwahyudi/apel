@@ -369,7 +369,7 @@ class LayananController extends Controller
             $perihal = $layanan->jenisPelayanan->nama_pelayanan;
             $tanggal_surat = now();
             $status_surat = MasterOption::where(['value' => 'Proses', 'type' => 'status_surat'])->first()->id;
-            $signed_by = User::where('role', 'Kepala')->first()->id;
+            $signed_by = User::where('role', 'Kepala Desa')->first()->id;
 
             $ins_reg_surat = RegisterSurat::create([
                 'nomor_surat' => $no_surat,
