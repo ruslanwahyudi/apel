@@ -14,7 +14,7 @@ class SettingHomeController extends Controller
     public function index()
     {
         try {
-            $users = User::with('profile')->where('role', 'Kepala')->get();
+            $users = User::with('profile')->where('role', 'Kepala Desa')->get();
             
             foreach ($users as $user) {
                 if ($user->profile && $user->profile->foto) {
