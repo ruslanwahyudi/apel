@@ -15,7 +15,7 @@ class WisataController extends Controller
         $data = $wisata->map(function($item) {
             return [
                 'id' => $item->id,
-                'nama_wisata' => $item->nama_wisata,
+                'nama_wisata' => $item->nama,
                 'deskripsi' => $item->deskripsi,
                 'lokasi' => $item->lokasi,
                 'jam_operasional' => $item->jam_operasional,
