@@ -72,7 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Verification routes
     Route::post('upload-selfie', [AuthController::class, 'uploadSelfie']);
-    Route::get('daftardusun', [SettingHomeController::class, 'getDaftarDusun']);
+    
     Route::get('verification-status', [AuthController::class, 'checkVerificationStatus']);
     Route::get('profile/load', [AuthController::class, 'loadUser']);
     Route::get('profile/daftar-pengajuan-user', [AuthController::class, 'getDaftarPengajuanUser']);
@@ -146,6 +146,8 @@ Route::get('/settings/privacy-policy', [SettingHomeController::class, 'getPrivac
 Route::get('/settings/contact', [SettingHomeController::class, 'getContact']);
 Route::get('/settings/about', [SettingHomeController::class, 'getAbout']);
 Route::get('/settings/lokasi', [SettingHomeController::class, 'getLokasi']);
+
+Route::get('daftardusun', [SettingHomeController::class, 'getDaftarDusun']);
 
 // Pembangunan API Routes
 Route::get('pembangunan', [PembangunanController::class, 'index']);
