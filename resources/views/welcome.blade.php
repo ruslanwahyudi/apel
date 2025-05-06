@@ -21,10 +21,10 @@
                                     <div class="col-lg-12 text-center">
                                         <h1>{{ $gallery->title }}</h1>
                                         <p class="lead">{{ $gallery->description }}</p>
-                                        <div class="d-flex justify-content-center gap-3 mb-4">
+                                        <!-- <div class="d-flex justify-content-center gap-3 mb-4">
                                             <a href="#layanan" class="btn btn-custom btn-primary-custom">Layanan Online</a>
                                             <a href="#profil" class="btn btn-custom btn-outline-light">Pelajari Lebih Lanjut</a>
-                                        </div>
+                                        </div> -->
                                         <div class="app-download">
                                             <a href="{{ $settings->playstore_url ?? 'https://play.google.com/store/apps/details?id=com.banyupele_app' }}" target="_blank" class="playstore-button">
                                                 <div class="playstore-content">
