@@ -29,7 +29,7 @@
                                             <a href="{{ $settings->playstore_url ?? 'https://play.google.com/store/apps/details?id=com.banyupele_app' }}" target="_blank" class="playstore-button">
                                                 <div class="playstore-content">
                                                     <div class="playstore-icon">
-                                                        <i class="fab fa-playstore"></i>
+                                                        <i class="fab fa-google-play"></i>
                                                     </div>
                                                     <div class="playstore-text">
                                                         <span class="small-text">Dapatkan Aplikasi dari</span>
