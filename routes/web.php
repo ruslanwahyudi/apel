@@ -36,6 +36,7 @@ use App\Http\Controllers\adm\DusunController;
 use App\Http\Controllers\Admin\KegiatanPembangunanController;
 use App\Http\Controllers\Admin\ProgresPembangunanController;
 use App\Http\Controllers\KontakController;
+use App\Http\Controllers\layanan\PengajuanPenggunaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -332,6 +333,13 @@ Route::middleware(['auth', 'role:admin,kepala'])->group(function () {
     Route::delete('layanan/daftar-layanan/destroy/{daftar}', [DaftarLayananController::class, 'destroy'])->name('layanan.daftar.destroy');
     Route::get('layanan/daftar-layanan/search/{search}', [DaftarLayananController::class, 'search'])->name('layanan.daftar.search');
     Route::post('layanan/daftar-layanan/approve/{id}', [DaftarLayananController::class, 'approve'])->name('layanan.approve');
+
+    // Pengajuan Pengguna
+    Route::get('layanan/pengajuan-pengguna', [PengajuanPenggunaController::class, 'index'])->name('layanan.pengajuan_pengguna');
+    Route::get('layanan/pengajuan-pengguna/show/{id}', [PengajuanPenggunaController::class, 'show'])->name('layanan.pengajuan_pengguna.show');
+    Route::post('layanan/pengajuan-pengguna/approve', [PengajuanPenggunaController::class, 'approve'])->name('layanan.pengajuan_pengguna.approve');
+    Route::post('layanan/pengajuan-pengguna/reject', [PengajuanPenggunaController::class, 'reject'])->name('layanan.pengajuan_pengguna.reject');
+    Route::get('layanan/pengajuan-pengguna/search/{search}', [PengajuanPenggunaController::class, 'search'])->name('layanan.pengajuan_pengguna.search');
 
     // Gallery Routes
     // Route::resource('gallery', GalleryController::class);
