@@ -218,7 +218,7 @@ $(document).ready(function() {
                             <td>${pengajuan.email || '-'}</td>
                             <td>${pengajuan.phone || '-'}</td>
                             <td>${pengajuan.profile ? (pengajuan.profile.nik || '-') : '-'}</td>
-                            <td>${pengajuan.dusun ? pengajuan.dusun.name : '-'}</td>
+                            <td>${pengajuan.dusun ? pengajuan.dusun.nama_dusun : '-'}</td>
                             <td>
                                 <button class="btn btn-info btn-sm detail-pengajuan" data-id="${pengajuan.id}">Detail <i class="fa fa-eye"></i></button>
                             </td>
@@ -276,8 +276,8 @@ $(document).ready(function() {
                     $('#detail-gender').text(response.profile.jenis_kelamin || '-');
                     
                     // Set profile photo if available
-                    if (response.profile.foto) {
-                        $('#user-photo').attr('src', '/storage/' + response.profile.foto);
+                    if (response.profile.foto_selfie) {
+                        $('#user-photo').attr('src', '/storage/selfies/' + response.profile.foto_selfie);
                     } else {
                         $('#user-photo').attr('src', '/assets/images/avatars/default.png');
                     }
