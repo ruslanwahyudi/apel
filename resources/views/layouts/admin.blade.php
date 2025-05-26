@@ -7,6 +7,7 @@
 		<title>Banyupelle :: Administrator</title>
 		<meta name="description" content="Free Bootstrap 4 Admin Theme | Pike Admin">
 		<meta name="author" content="Pike Web Development - https://www.pikephp.com">
+		<meta name="csrf-token" content="{{ csrf_token() }}">
 
 		<!-- Favicon -->
 		<link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">

@@ -361,9 +361,15 @@ Route::middleware(['auth', 'role:admin,kepala'])->group(function () {
     Route::get('adm/kategori-surat/create', [KategoriSuratController::class, 'create'])->name('adm.kategori-surat.create');
     Route::post('adm/kategori-surat', [KategoriSuratController::class, 'store'])->name('adm.kategori-surat.store');
     Route::get('adm/kategori-surat/{kategori}/edit', [KategoriSuratController::class, 'edit'])->name('adm.kategori-surat.edit');
+    Route::get('adm/kategori-surat/{kategori}/edit-simple', [KategoriSuratController::class, 'editSimple'])->name('adm.kategori-surat.edit-simple');
     Route::put('adm/kategori-surat/{kategori}', [KategoriSuratController::class, 'update'])->name('adm.kategori-surat.update');
     Route::delete('adm/kategori-surat/{kategori}', [KategoriSuratController::class, 'destroy'])->name('adm.kategori-surat.destroy');
     Route::get('adm/kategori-surat/search/{search}', [KategoriSuratController::class, 'search'])->name('adm.kategori-surat.search');
+    Route::post('adm/kategori-surat/{kategori}/preview-template', [KategoriSuratController::class, 'previewTemplate'])->name('adm.kategori-surat.preview-template');
+    Route::get('adm/kategori-surat/{kategori}/template', [KategoriSuratController::class, 'showTemplate'])->name('adm.kategori-surat.template');
+    Route::post('adm/kategori-surat/{kategori}/generate-pdf', [KategoriSuratController::class, 'generatePdf'])->name('adm.kategori-surat.generate-pdf');
+    Route::post('adm/kategori-surat/{kategori}/detect-positions', [KategoriSuratController::class, 'detectVariablePositionsApi'])->name('adm.kategori-surat.detect-positions');
+    Route::post('adm/kategori-surat/{kategori}/test-replacement', [KategoriSuratController::class, 'testVariableReplacement'])->name('adm.kategori-surat.test-replacement');
     
     // Register Surat Routes
     Route::get('adm/register-surat', [RegisterSuratController::class, 'index'])->name('adm.register_surat.index');
@@ -445,5 +451,33 @@ Route::get('storage/{path}', function($path) {
         'Content-Type' => mime_content_type($filePath)
     ]);
 })->where('path', '.*');
+
+// Test FPDI functionality
+Route::get('/test-fpdi-simple', function() {
+    try {
+        // Include FPDF first, then FPDI
+        require_once base_path('vendor/setasign/fpdf/fpdf.php');
+        require_once base_path('vendor/setasign/fpdi/src/autoload.php');
+        
+        $pdf = new \setasign\Fpdi\Fpdi();
+        $pdf->AddPage();
+        $pdf->SetFont('Arial', '', 12);
+        $pdf->Text(50, 50, 'FPDI is working correctly!');
+        $pdf->Text(50, 70, 'Date: ' . date('Y-m-d H:i:s'));
+        $pdf->Text(50, 90, 'FPDF Version: ' . (defined('FPDF_VERSION') ? FPDF_VERSION : 'Unknown'));
+        
+        return response($pdf->Output('S'))
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="fpdi-test.pdf"');
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => true,
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+    }
+});
+
+
 
 

@@ -45,8 +45,8 @@
 <body>
     <div class="header">
         <!-- <img src="{{ public_path('assets/images/logo.png') }}" height="80"> -->
-        <h2>PEMERINTAH KABUPATEN SAMPANG</h2>
-        <h3>KECAMATAN CAMPLONG</h3>
+        <h2>PEMERINTAH KABUPATEN PAMEKASAN</h2>
+        <h3>KECAMATAN PAMEKASAN</h3>
         <h1>DESA BANYUPELLE</h1>
         <hr>
     </div>
