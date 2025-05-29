@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Models\adm\RegisterSurat;
-use App\Models\layanan\Layanan;
+use App\Models\Layanan\JenisPelayanan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,7 +16,7 @@ class MasterOption extends Model
 
     public function dukPelayanan()
     {
-        return $this->hasMany(Layanan::class, 'status_layanan', 'key');
+        return $this->hasMany(JenisPelayanan::class, 'status_layanan', 'key');
     }
 
     public function registerSurat()

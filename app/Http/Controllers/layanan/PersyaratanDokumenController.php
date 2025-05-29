@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\layanan;
 
 use App\Http\Controllers\Controller;
-use App\Models\layanan\JenisLayanan;
-use App\Models\layanan\PersyaratanDokumen;
+use App\Models\Layanan\JenisLayanan;
+use App\Models\Layanan\PersyaratanDokumen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 

@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Models\adm\RegisterSurat;
-use App\Models\layanan\Layanan;
+use App\Models\Layanan\JenisPelayanan;
 use Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -28,7 +28,7 @@ class LogTransaksi extends Model
 
     public function layanan()
     {
-        return $this->belongsTo(Layanan::class, 'id_log', 'id');
+        return $this->belongsTo(JenisPelayanan::class, 'id_log', 'id');
     }
 
     public static function insertLog($type_log, $id_log, $action, $description)

@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\blog\Posts;
 use App\Models\Gallery;
 use App\Models\informasi\ProfilDesa;
-use App\Models\layanan\JenisLayanan;
+use App\Models\Layanan\JenisLayanan;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 

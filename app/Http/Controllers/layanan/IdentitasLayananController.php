@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\layanan;
 
 use App\Http\Controllers\Controller;
-use App\Models\layanan\IdentitasLayanan;
+use App\Models\Layanan\IdentitasLayanan;
 use Illuminate\Http\Request;
 
 class IdentitasLayananController extends Controller
