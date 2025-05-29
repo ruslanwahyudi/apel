@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\layanan;
 
 use App\Http\Controllers\Controller;
-use app\Models\layanan\IdentitasLayanan;
+use App\Models\Layanan\IdentitasLayanan;
 use App\Models\Layanan\IdentitasPemohon;
-use App\Models\layanan\JenisLayanan;
+use App\Models\Layanan\JenisLayanan;
 use App\Models\Layanan\JenisPelayanan;
 use Illuminate\Http\Request;
 
