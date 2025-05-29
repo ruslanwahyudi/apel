@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\layanan;
 
 use App\Http\Controllers\Controller;
-use App\Models\layanan\IdentitasLayanan;
+use app\Models\layanan\IdentitasLayanan;
 use App\Models\Layanan\IdentitasPemohon;
 use App\Models\layanan\JenisLayanan;
 use App\Models\Layanan\JenisPelayanan;
