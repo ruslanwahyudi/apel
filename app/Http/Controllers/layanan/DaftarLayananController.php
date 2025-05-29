@@ -44,52 +44,122 @@ class DaftarLayananController extends Controller
 
     public function create()
     {
-        $jenis = JenisLayanan::where('status', true)->get();
-        $identitas = IdentitasLayanan::where('status', true)->get();
-        $persyaratan = PersyaratanDokumen::where('status', true)->get();
+        $jenis = \App\Models\Layanan\JenisPelayanan::all();
+        $identitas = IdentitasLayanan::all();
+        $persyaratan = PersyaratanDokumen::all();
 
         return view('layanan.daftar.create', compact('jenis', 'identitas', 'persyaratan'));
+    }
+
+    /**
+     * Mendapatkan form dinamis berdasarkan jenis layanan
+     */
+    public function getFormFields($jenisLayananId)
+    {
+        try {
+            // Ambil identitas pemohon berdasarkan jenis layanan
+            $identitasPemohon = \App\Models\Layanan\IdentitasPemohon::with('klasifikasi')
+                ->where('jenis_pelayanan_id', $jenisLayananId)
+                ->orderBy('klasifikasi_id')
+                ->get();
+
+            // Kelompokkan berdasarkan klasifikasi
+            $groupedFields = $identitasPemohon->groupBy('klasifikasi_id');
+            
+            // Format data untuk response
+            $formFields = [];
+            foreach ($groupedFields as $klasifikasiId => $fields) {
+                $klasifikasi = $fields->first()->klasifikasi;
+                $formFields[] = [
+                    'klasifikasi_id' => $klasifikasiId,
+                    'klasifikasi_nama' => $klasifikasi ? $klasifikasi->nama_klasifikasi : 'Tidak Berkategori',
+                    'klasifikasi_deskripsi' => $klasifikasi ? $klasifikasi->deskripsi : '',
+                    'fields' => $fields->map(function ($field) {
+                        return [
+                            'id' => $field->id,
+                            'nama_field' => $field->nama_field,
+                            'tipe_field' => $field->tipe_field,
+                            'required' => $field->required
+                        ];
+                    })->toArray()
+                ];
+            }
+
+            // Ambil syarat dokumen untuk jenis layanan ini (tanpa where status)
+            $syaratDokumen = \App\Models\Layanan\SyaratDokumen::where('jenis_pelayanan_id', $jenisLayananId)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'form_fields' => $formFields,
+                'syarat_dokumen' => $syaratDokumen
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'jenis_layanan_id' => 'required|exists:jenis_layanan,id',
-            'identitas_layanan_id' => 'required|exists:identitas_layanan,id',
-            'persyaratan_dokumen' => 'required|array',
-            'persyaratan_dokumen.*' => 'exists:persyaratan_dokumen,id',
-            'nama' => 'required|string|max:255',
-            'deskripsi' => 'required|string',
-            'file_pendukung' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
-            'status' => 'required|boolean'
+            'jenis_layanan_id' => 'required|exists:duk_jenis_pelayanan,id',
+            'catatan' => 'nullable|string',
+            'identitas_data' => 'required|array',
+            'identitas_data.*' => 'nullable|string',
+            'dokumen_files' => 'nullable|array',
+            'dokumen_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120'
         ]);
 
         try {
-            if ($request->hasFile('file_pendukung')) {
-                $file = $request->file('file_pendukung');
-                $nama_file = 'layanan-' . Str::slug($request->nama) . '-' . time() . '.' . $file->getClientOriginalExtension();
-                $path = $file->storeAs('public/layanan', $nama_file);
-                $path = str_replace('public/', 'storage/', $path);
-            }
+            \DB::beginTransaction();
 
-            $layanan = Pelayanan::create([
-                'jenis_layanan_id' => $request->jenis_layanan_id,
-                'identitas_layanan_id' => $request->identitas_layanan_id,
-                'nama' => $request->nama,
-                'deskripsi' => $request->deskripsi,
-                'file_pendukung' => $path ?? null,
-                'status' => $request->status,
-                'user_id' => auth()->id()
+            // Ambil status default (Draft)
+            $statusLayanan = \App\Models\MasterOption::where(['value' => 'Draft', 'type' => 'status_layanan'])->first();
+
+            // Simpan data pelayanan
+            $pelayanan = \App\Models\Layanan\Pelayanan::create([
+                'user_id' => auth()->id(),
+                'jenis_pelayanan_id' => $request->jenis_layanan_id,
+                'catatan' => $request->catatan,
+                'status_layanan' => $statusLayanan->id
             ]);
 
-            $layanan->persyaratan()->attach($request->persyaratan_dokumen);
+            // Simpan data identitas pemohon
+            foreach ($request->identitas_data as $identitasId => $nilai) {
+                if (!empty($nilai)) {
+                    \App\Models\Layanan\DataIdentitasPemohon::create([
+                        'pelayanan_id' => $pelayanan->id,
+                        'identitas_pemohon_id' => $identitasId,
+                        'nilai' => $nilai
+                    ]);
+                }
+            }
+
+            // Simpan dokumen jika ada
+            if ($request->hasFile('dokumen_files')) {
+                foreach ($request->file('dokumen_files') as $syaratId => $file) {
+                    if ($file) {
+                        $fileName = 'dokumen-' . $pelayanan->id . '-' . $syaratId . '-' . time() . '.' . $file->getClientOriginalExtension();
+                        $path = $file->storeAs('layanan/dokumen', $fileName, 'public');
+
+                        \App\Models\Layanan\DokumenPengajuan::create([
+                            'pelayanan_id' => $pelayanan->id,
+                            'syarat_dokumen_id' => $syaratId,
+                            'path_dokumen' => $path
+                        ]);
+                    }
+                }
+            }
+
+            \DB::commit();
 
             return redirect()->route('layanan.daftar')
                 ->with('success', 'Layanan berhasil ditambahkan!');
         } catch (\Exception $e) {
-            if (isset($path)) {
-                Storage::delete(str_replace('storage/', 'public/', $path));
-            }
+            \DB::rollback();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -100,74 +170,112 @@ class DaftarLayananController extends Controller
         return response()->json($layanan);
     }
 
-    public function edit(Pelayanan $layanan)
+    public function edit(Pelayanan $daftar)
     {
-        $layanan->load(['jenisPelayanan', 'dataIdentitas', 'dokumenPengajuan']);
-        $jenis = JenisLayanan::where('status', true)->get();
-        $identitas = IdentitasLayanan::where('status', true)->get();
-        $persyaratan = PersyaratanDokumen::where('status', true)->get();
-        $selected_persyaratan = $layanan->persyaratan->pluck('id')->toArray();
+        $daftar->load(['jenisPelayanan', 'dataIdentitas.identitasPemohon', 'dokumenPengajuan.syaratDokumen']);
+        $jenis = \App\Models\Layanan\JenisPelayanan::all();
+        
+        // Format data identitas untuk form
+        $existingData = [];
+        foreach ($daftar->dataIdentitas as $data) {
+            $existingData[$data->identitas_pemohon_id] = $data->nilai;
+        }
 
-        return view('layanan.daftar.edit', compact('layanan', 'jenis', 'identitas', 'persyaratan', 'selected_persyaratan'));
+        return view('layanan.daftar.edit', compact('daftar', 'jenis', 'existingData'));
     }
 
-    public function update(Request $request, Pelayanan $layanan)
+    public function update(Request $request, Pelayanan $daftar)
     {
         $request->validate([
-            'jenis_layanan_id' => 'required|exists:jenis_layanan,id',
-            'identitas_layanan_id' => 'required|exists:identitas_layanan,id',
-            'persyaratan_dokumen' => 'required|array',
-            'persyaratan_dokumen.*' => 'exists:persyaratan_dokumen,id',
-            'nama' => 'required|string|max:255',
-            'deskripsi' => 'required|string',
-            'file_pendukung' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
-            'status' => 'required|boolean'
+            'jenis_layanan_id' => 'required|exists:duk_jenis_pelayanan,id',
+            'catatan' => 'nullable|string',
+            'identitas_data' => 'required|array',
+            'identitas_data.*' => 'nullable|string',
+            'dokumen_files' => 'nullable|array',
+            'dokumen_files.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120'
         ]);
 
         try {
-            $old_file = $layanan->file_pendukung;
+            \DB::beginTransaction();
 
-            if ($request->hasFile('file_pendukung')) {
-                $file = $request->file('file_pendukung');
-                $nama_file = 'layanan-' . Str::slug($request->nama) . '-' . time() . '.' . $file->getClientOriginalExtension();
-                $path = $file->storeAs('public/layanan', $nama_file);
-                $path = str_replace('public/', 'storage/', $path);
+            // Update data pelayanan
+            $daftar->update([
+                'jenis_pelayanan_id' => $request->jenis_layanan_id,
+                'catatan' => $request->catatan
+            ]);
 
-                if ($old_file) {
-                    Storage::delete(str_replace('storage/', 'public/', $old_file));
+            // Hapus data identitas lama
+            $daftar->dataIdentitas()->delete();
+
+            // Simpan data identitas baru
+            foreach ($request->identitas_data as $identitasId => $nilai) {
+                if (!empty($nilai)) {
+                    \App\Models\Layanan\DataIdentitasPemohon::create([
+                        'pelayanan_id' => $daftar->id,
+                        'identitas_pemohon_id' => $identitasId,
+                        'nilai' => $nilai
+                    ]);
                 }
             }
 
-            $layanan->update([
-                'jenis_layanan_id' => $request->jenis_layanan_id,
-                'identitas_layanan_id' => $request->identitas_layanan_id,
-                'nama' => $request->nama,
-                'deskripsi' => $request->deskripsi,
-                'file_pendukung' => $path ?? $old_file,
-                'status' => $request->status
-            ]);
+            // Handle dokumen baru (jika ada)
+            if ($request->hasFile('dokumen_files')) {
+                foreach ($request->file('dokumen_files') as $syaratId => $file) {
+                    if ($file) {
+                        // Hapus dokumen lama untuk syarat ini jika ada
+                        $oldDokumen = $daftar->dokumenPengajuan()->where('syarat_dokumen_id', $syaratId)->first();
+                        if ($oldDokumen) {
+                            // Hapus file lama
+                            if (\Storage::disk('public')->exists($oldDokumen->path_dokumen)) {
+                                \Storage::disk('public')->delete($oldDokumen->path_dokumen);
+                            }
+                            $oldDokumen->delete();
+                        }
 
-            $layanan->persyaratan()->sync($request->persyaratan_dokumen);
+                        // Simpan file baru
+                        $fileName = 'dokumen-' . $daftar->id . '-' . $syaratId . '-' . time() . '.' . $file->getClientOriginalExtension();
+                        $path = $file->storeAs('layanan/dokumen', $fileName, 'public');
+
+                        \App\Models\Layanan\DokumenPengajuan::create([
+                            'pelayanan_id' => $daftar->id,
+                            'syarat_dokumen_id' => $syaratId,
+                            'path_dokumen' => $path
+                        ]);
+                    }
+                }
+            }
+
+            \DB::commit();
 
             return redirect()->route('layanan.daftar')
                 ->with('success', 'Layanan berhasil diperbarui!');
         } catch (\Exception $e) {
-            if (isset($path)) {
-                Storage::delete(str_replace('storage/', 'public/', $path));
-            }
+            \DB::rollback();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
-    public function destroy(Pelayanan $layanan)
+    public function destroy(Pelayanan $daftar)
     {
         try {
-            if ($layanan->file_pendukung) {
-                Storage::delete(str_replace('storage/', 'public/', $layanan->file_pendukung));
+            \DB::beginTransaction();
+
+            // Hapus file dokumen yang terkait
+            $dokumenPengajuan = $daftar->dokumenPengajuan;
+            foreach ($dokumenPengajuan as $dokumen) {
+                if (\Storage::disk('public')->exists($dokumen->path_dokumen)) {
+                    \Storage::disk('public')->delete($dokumen->path_dokumen);
+                }
+                $dokumen->delete();
             }
 
-            $layanan->persyaratan()->detach();
-            $layanan->delete();
+            // Hapus data identitas pemohon
+            $daftar->dataIdentitas()->delete();
+
+            // Hapus data pelayanan
+            $daftar->delete();
+
+            \DB::commit();
 
             if (request()->ajax()) {
                 return response()->json([
@@ -179,6 +287,8 @@ class DaftarLayananController extends Controller
             return redirect()->route('layanan.daftar')
                 ->with('success', 'Layanan berhasil dihapus!');
         } catch (\Exception $e) {
+            \DB::rollback();
+            
             if (request()->ajax()) {
                 return response()->json([
                     'success' => false,
@@ -192,15 +302,24 @@ class DaftarLayananController extends Controller
 
     public function search($search)
     {
-        $layanan = Pelayanan::with(['jenis', 'identitas', 'persyaratan'])
-            ->where('nama', 'like', "%{$search}%")
-            ->orWhere('deskripsi', 'like', "%{$search}%")
-            ->orWhereHas('jenis', function($query) use ($search) {
-                $query->where('nama', 'like', "%{$search}%");
+        $layanan = Pelayanan::with([
+                'user',
+                'jenisPelayanan', 
+                'dataIdentitas.identitasPemohon',
+                'dokumenPengajuan.syaratDokumen',
+                'status'
+            ])
+            ->whereHas('jenisPelayanan', function($query) use ($search) {
+                $query->where('nama_pelayanan', 'like', "%{$search}%");
             })
-            ->orWhereHas('identitas', function($query) use ($search) {
-                $query->where('nama', 'like', "%{$search}%");
+            ->orWhereHas('user', function($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%");
             })
+            ->orWhereHas('dataIdentitas', function($query) use ($search) {
+                $query->where('nilai', 'like', "%{$search}%");
+            })
+            ->orWhere('catatan', 'like', "%{$search}%")
+            ->orderBy('id', 'desc')
             ->get();
 
         return response()->json($layanan);
@@ -395,6 +514,76 @@ class DaftarLayananController extends Controller
                 ]);
                 // Lanjutkan eksekusi meski notifikasi gagal
             }
+        }
+    }
+
+    /**
+     * Preview surat untuk pelayanan tertentu
+     */
+    public function previewSurat($id)
+    {
+        try {
+            $pelayanan = \App\Models\Layanan\Pelayanan::with([
+                'jenisPelayanan', 
+                'dataIdentitas.identitasPemohon', 
+                'user'
+            ])->findOrFail($id);
+
+            // Cari kategori surat yang sesuai dengan jenis pelayanan
+            $kategoriSurat = \App\Models\adm\KategoriSurat::where('jenis_pelayanan_id', $pelayanan->jenis_pelayanan_id)
+                ->where('tipe_surat', 'layanan')
+                ->first();
+
+            if (!$kategoriSurat) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Template surat untuk jenis layanan ini belum tersedia'
+                ], 404);
+            }
+
+            // Ambil data identitas dalam format key-value
+            $dataIdentitas = [];
+            foreach ($pelayanan->dataIdentitas as $data) {
+                if ($data->identitasPemohon) {
+                    $dataIdentitas[$data->identitasPemohon->nama_field] = $data->nilai;
+                }
+            }
+
+            // Data untuk template
+            $templateData = [
+                'kategori' => $kategoriSurat,
+                'generated_at' => now(),
+                'nomor_surat' => 'PREVIEW-' . date('YmdHis'),
+                'data' => array_merge($dataIdentitas, [
+                    'nama_pemohon' => $pelayanan->user->name,
+                    'jenis_layanan' => $pelayanan->jenisPelayanan->nama_pelayanan,
+                    'tanggal_pengajuan' => $pelayanan->created_at->format('d F Y'),
+                    'catatan' => $pelayanan->catatan
+                ])
+            ];
+
+            // Cek apakah ada template blade
+            if ($kategoriSurat->hasBladeTemplate()) {
+                $templatePath = $kategoriSurat->getBladeTemplatePath();
+                $html = view($templatePath, $templateData)->render();
+                
+                return response()->json([
+                    'success' => true,
+                    'html' => $html,
+                    'template_type' => 'blade'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Template surat belum tersedia'
+                ], 404);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
         }
     }
 } 

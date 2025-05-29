@@ -5,6 +5,7 @@ namespace App\Models\Layanan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
+use App\Models\Layanan\KlasifikasiIdentitasPemohon;
 
 class IdentitasLayanan extends Model
 {
@@ -14,6 +15,7 @@ class IdentitasLayanan extends Model
 
     protected $fillable = [
         'jenis_pelayanan_id',
+        'klasifikasi_id',
         'nama_field',
         'tipe_field',
         'required',
@@ -31,5 +33,10 @@ class IdentitasLayanan extends Model
     public function layanan()
     {
         return $this->hasMany(Pelayanan::class);
+    }
+
+    public function klasifikasi()
+    {
+        return $this->belongsTo(KlasifikasiIdentitasPemohon::class, 'klasifikasi_id');
     }
 } 

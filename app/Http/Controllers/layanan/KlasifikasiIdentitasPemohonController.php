@@ -36,7 +36,7 @@ class KlasifikasiIdentitasPemohonController extends Controller
                 'nama_klasifikasi' => $request->nama_klasifikasi,
                 'deskripsi' => $request->deskripsi,
                 'urutan' => $request->urutan ?? 0,
-                'status' => $request->has('status')
+                'status' => $request->has('status') ? true : false
             ]);
 
             if ($request->ajax()) {

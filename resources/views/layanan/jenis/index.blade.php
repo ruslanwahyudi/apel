@@ -3,6 +3,14 @@
 @section('css')
 <!-- BEGIN CSS for this page -->
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.16/css/dataTables.bootstrap4.min.css"/>    
+<style>
+.input-group .btn {
+    border-left: 0;
+}
+.input-group .form-control:focus + .input-group-append .btn {
+    border-color: #80bdff;
+}
+</style>
 @endsection
 
 @section('content')
@@ -92,17 +100,24 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="klasifikasi_id">Klasifikasi <span class="text-danger">*</span></label>
-                        <select class="form-control" id="klasifikasi_id" name="klasifikasi_id" required>
-                            <option value="">Pilih Klasifikasi</option>
-                            @php
-                                $klasifikasiList = \App\Models\Layanan\KlasifikasiIdentitasPemohon::where('status', true)
-                                    ->orderBy('urutan')
-                                    ->get();
-                            @endphp
-                            @foreach($klasifikasiList as $klasifikasi)
-                                <option value="{{ $klasifikasi->id }}">{{ $klasifikasi->nama_klasifikasi }}</option>
-                            @endforeach
-                        </select>
+                        <div class="input-group">
+                            <select class="form-control" id="klasifikasi_id" name="klasifikasi_id" required>
+                                <option value="">Pilih Klasifikasi</option>
+                                @php
+                                    $klasifikasiList = \App\Models\Layanan\KlasifikasiIdentitasPemohon::where('status', true)
+                                        ->orderBy('urutan')
+                                        ->get();
+                                @endphp
+                                @foreach($klasifikasiList as $klasifikasi)
+                                    <option value="{{ $klasifikasi->id }}">{{ $klasifikasi->nama_klasifikasi }}</option>
+                                @endforeach
+                            </select>
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-success" id="btnTambahKlasifikasi" title="Tambah Klasifikasi Baru">
+                                    <i class="fa fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -174,6 +189,48 @@
                         <button type="submit" class="btn btn-primary">Simpan</button>
                     </div>
                 </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Form Klasifikasi -->
+<div class="modal fade" id="klasifikasiModal" tabindex="-1" role="dialog" aria-labelledby="klasifikasiModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="klasifikasiModalLabel">Tambah Klasifikasi Identitas</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="klasifikasiForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="nama_klasifikasi">Nama Klasifikasi <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="nama_klasifikasi" name="nama_klasifikasi" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="deskripsi_klasifikasi">Deskripsi</label>
+                        <textarea class="form-control" id="deskripsi_klasifikasi" name="deskripsi" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="urutan">Urutan</label>
+                        <input type="number" class="form-control" id="urutan" name="urutan" min="0" value="0">
+                        <small class="form-text text-muted">Urutan tampilan klasifikasi (0 = paling atas)</small>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="status_klasifikasi" name="status" value="1" checked>
+                            <label class="custom-control-label" for="status_klasifikasi">Aktif</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -316,6 +373,86 @@ $(document).ready(function() {
         var jenisId = $(this).data('id');
         $('#identitasForm').find('#jenis_pelayanan_id').val(jenisId);
         $('#identitasModal').modal('show');
+    });
+
+    // Show modal when btnTambahKlasifikasi button is clicked
+    $(document).on('click', '#btnTambahKlasifikasi', function() {
+        $('#klasifikasiForm')[0].reset();
+        $('#klasifikasiModal').modal('show');
+    });
+
+    // Function to reload klasifikasi options
+    function reloadKlasifikasiOptions() {
+        $.ajax({
+            url: "{{ route('layanan.klasifikasi') }}",
+            method: "GET",
+            success: function(response) {
+                var klasifikasiSelect = $('#klasifikasi_id');
+                var currentValue = klasifikasiSelect.val();
+                
+                // Clear existing options except the first one
+                klasifikasiSelect.find('option:not(:first)').remove();
+                
+                // Add new options
+                response.forEach(function(klasifikasi) {
+                    klasifikasiSelect.append(new Option(klasifikasi.nama_klasifikasi, klasifikasi.id));
+                });
+                
+                // Restore selected value if it still exists
+                if (currentValue) {
+                    klasifikasiSelect.val(currentValue);
+                }
+            },
+            error: function(xhr) {
+                console.error('Error reloading klasifikasi options:', xhr);
+            }
+        });
+    }
+
+    // Form submit handler for Klasifikasi
+    $('#klasifikasiForm').submit(function(e) {
+        e.preventDefault();
+        
+        // Show loading indicator
+        $('#klasifikasiModal .modal-footer').prepend('<div id="klasifikasi-loading" class="mr-2"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="sr-only">Loading...</span></div></div>');
+        
+        $.ajax({
+            url: "{{ route('layanan.klasifikasi.store') }}",
+            method: 'POST',
+            data: $(this).serialize(),
+            success: function(response) {
+                // Remove loading indicator
+                $('#klasifikasi-loading').remove();
+                
+                $('#klasifikasiModal').modal('hide');
+                swal("Berhasil!", response.message, "success");
+                
+                // Reset form
+                $('#klasifikasiForm')[0].reset();
+                
+                // Reload klasifikasi options
+                reloadKlasifikasiOptions();
+            },
+            error: function(xhr) {
+                // Remove loading indicator
+                $('#klasifikasi-loading').remove();
+                
+                let errorMsg = 'Terjadi kesalahan saat menyimpan data.';
+                
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    // Handle validation errors
+                    let errors = [];
+                    for (let field in xhr.responseJSON.errors) {
+                        errors = errors.concat(xhr.responseJSON.errors[field]);
+                    }
+                    errorMsg = errors.join(', ');
+                }
+                
+                swal("Error!", errorMsg, "error");
+            }
+        });
     });
 
     $(document).on('click', '.edit-identitas', function() {

@@ -14,6 +14,14 @@
     td .btn:last-child {
         margin-bottom: 0;
     }
+    .preview-content {
+        max-height: 600px;
+        overflow-y: auto;
+        padding: 20px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
 </style>
 @endsection
 
@@ -76,7 +84,7 @@
                                     <th>Identitas Pemohon</th>
                                     <th>Dokumen Pengajuan</th>
                                     <th>Status</th>
-                                    <th>Action</th>
+                                    <th style="width: 200px;">Action</th>
                                 </tr>
                             </thead>                                   
                             <tbody id="data-table-body">
@@ -89,7 +97,7 @@
     </div>
 </div>
 
-<!-- Tambahkan modal untuk preview dokumen -->
+<!-- Modal untuk preview dokumen -->
 <div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="previewModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
@@ -101,6 +109,35 @@
             </div>
             <div class="modal-body">
                 <iframe id="previewFrame" style="width: 100%; height: 500px;" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal untuk preview surat -->
+<div class="modal fade" id="previewSuratModal" tabindex="-1" role="dialog" aria-labelledby="previewSuratModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document" style="max-width: 95%; margin: 1.75rem auto;">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="previewSuratModalLabel">
+                    <i class="fa fa-eye"></i> Preview Surat Layanan
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="previewSuratContent" class="preview-content">
+                    <!-- Konten preview akan dimuat disini -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fa fa-times"></i> Tutup
+                </button>
+                <button type="button" class="btn btn-primary" id="printPreview">
+                    <i class="fa fa-print"></i> Print
+                </button>
             </div>
         </div>
     </div>
@@ -193,19 +230,24 @@ $(document).ready(function() {
                             </td>
                             <td>${dataIdentitas}</td>
                             <td>${dokumenPengajuan}</td>
-                            <td>${layanan.status.description}</td>
+                            <td><span class="badge badge-${getStatusBadgeClass(layanan.status.description)}">${layanan.status.description}</span></td>
                             <td>
-                                ${layanan.status.description === 'Belum Diproses' ? 
-                                    `<button class="btn btn-success btn-sm approve-layanan mb-1" data-id="${layanan.id}">
-                                        Approve <i class="fa fa-check"></i>
-                                    </button><br>` : ''
-                                }
-                                <button class="btn btn-warning btn-sm edit-layanan mb-1" data-id="${layanan.id}">
-                                    Edit <i class="fa fa-edit"></i>
-                                </button><br>
-                                <button class="btn btn-danger btn-sm delete-layanan" data-id="${layanan.id}">
-                                    Hapus <i class="fa fa-trash"></i>
-                                </button>
+                                <div class="btn-group-vertical w-100" role="group">
+                                    <button class="btn btn-info btn-sm preview-surat mb-1" data-id="${layanan.id}" title="Preview Surat">
+                                        <i class="fa fa-eye"></i> Preview
+                                    </button>
+                                    ${layanan.status.description === 'Belum Diproses' ? 
+                                        `<button class="btn btn-success btn-sm approve-layanan mb-1" data-id="${layanan.id}" title="Approve Layanan">
+                                            <i class="fa fa-check"></i> Approve
+                                        </button>` : ''
+                                    }
+                                    <button class="btn btn-warning btn-sm edit-layanan mb-1" data-id="${layanan.id}" title="Edit Layanan">
+                                        <i class="fa fa-edit"></i> Edit
+                                    </button>
+                                    <button class="btn btn-danger btn-sm delete-layanan" data-id="${layanan.id}" title="Hapus Layanan">
+                                        <i class="fa fa-trash"></i> Hapus
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     `;
@@ -213,6 +255,18 @@ $(document).ready(function() {
                 $('#data-table-body').html(rows);
             }
         });
+    }
+
+    // Function untuk status badge class
+    function getStatusBadgeClass(status) {
+        switch (status) {
+            case 'Belum Diproses': return 'secondary';
+            case 'Sedang Diproses': return 'warning';
+            case 'Selesai': return 'success';
+            case 'Draft': return 'light';
+            case 'Ditolak': return 'danger';
+            default: return 'info';
+        }
     }
 
     $('#refreshButton').click(function() {
@@ -247,6 +301,62 @@ $(document).ready(function() {
                 $('#data-table-body').html(rows);
             }
         });
+    });
+
+    // Preview surat handler
+    $('#data-table-body').on('click', '.preview-surat', function() {
+        var layananId = $(this).data('id');
+        
+        $.ajax({
+            url: "{{ route('layanan.daftar.preview-surat', ['id' => ':id']) }}".replace(':id', layananId),
+            method: 'GET',
+            beforeSend: function() {
+                $('#previewSuratContent').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div><p class="mt-2">Memuat preview surat...</p></div>');
+                $('#previewSuratModal').modal('show');
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#previewSuratContent').html(response.html);
+                } else {
+                    $('#previewSuratContent').html(
+                        '<div class="alert alert-warning text-center">' +
+                            '<i class="fa fa-exclamation-triangle"></i>' +
+                            response.message +
+                        '</div>'
+                    );
+                }
+            },
+            error: function(xhr) {
+                $('#previewSuratContent').html(
+                    '<div class="alert alert-danger text-center">' +
+                        '<i class="fa fa-times-circle"></i>' +
+                        'Terjadi kesalahan saat memuat preview surat' +
+                    '</div>'
+                );
+            }
+        });
+    });
+
+    // Print preview handler
+    $('#printPreview').click(function() {
+        var printContent = $('#previewSuratContent').html();
+        var printWindow = window.open('', '_blank');
+        printWindow.document.write(
+            '<html>' +
+                '<head>' +
+                    '<title>Preview Surat</title>' +
+                    '<style>' +
+                        'body { font-family: Arial, sans-serif; margin: 20px; }' +
+                        '@media print { body { margin: 0; } }' +
+                    '</style>' +
+                '</head>' +
+                '<body>' +
+                    printContent +
+                    '<script>window.print(); window.close();<\/script>' +
+                '</body>' +
+            '</html>'
+        );
+        printWindow.document.close();
     });
 
     // Edit handler
@@ -319,4 +429,4 @@ function previewDokumen(url) {
     $('#previewModal').modal('show');
 }
 </script>
-@endsection 
+@endsection

@@ -340,6 +340,8 @@ Route::middleware(['auth', 'role:admin,kepala'])->group(function () {
     Route::get('layanan/daftar-layanan', [DaftarLayananController::class, 'index'])->name('layanan.daftar');
     Route::get('layanan/daftar-layanan/create', [DaftarLayananController::class, 'create'])->name('layanan.daftar.create');
     Route::post('layanan/daftar-layanan', [DaftarLayananController::class, 'store'])->name('layanan.daftar.store');
+    Route::get('layanan/daftar-layanan/get-form-fields/{jenisLayananId}', [DaftarLayananController::class, 'getFormFields'])->name('layanan.daftar.get-form-fields');
+    Route::get('layanan/daftar-layanan/preview-surat/{id}', [DaftarLayananController::class, 'previewSurat'])->name('layanan.daftar.preview-surat');
     Route::get('layanan/daftar-layanan/edit/{daftar}', [DaftarLayananController::class, 'edit'])->name('layanan.daftar.edit');
     Route::put('layanan/daftar-layanan/update/{daftar}', [DaftarLayananController::class, 'update'])->name('layanan.daftar.update');
     Route::delete('layanan/daftar-layanan/destroy/{daftar}', [DaftarLayananController::class, 'destroy'])->name('layanan.daftar.destroy');
@@ -478,7 +480,7 @@ Route::get('/test-fpdi-simple', function() {
         $pdf->SetFont('Arial', '', 12);
         $pdf->Text(50, 50, 'FPDI is working correctly!');
         $pdf->Text(50, 70, 'Date: ' . date('Y-m-d H:i:s'));
-        $pdf->Text(50, 90, 'FPDF Version: ' . (defined('FPDF_VERSION') ? FPDF_VERSION : 'Unknown'));
+        // $pdf->Text(50, 90, 'FPDF Version: ' . (defined('FPDF_VERSION') ? FPDF_VERSION : 'Unknown'));
         
         return response($pdf->Output('S'))
             ->header('Content-Type', 'application/pdf')

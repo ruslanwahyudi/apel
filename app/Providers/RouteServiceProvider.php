@@ -24,6 +24,11 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Custom route model bindings
+        Route::bind('daftar', function ($value) {
+            return \App\Models\Layanan\Pelayanan::findOrFail($value);
+        });
+
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
