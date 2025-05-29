@@ -37,6 +37,8 @@ use App\Http\Controllers\Admin\KegiatanPembangunanController;
 use App\Http\Controllers\Admin\ProgresPembangunanController;
 use App\Http\Controllers\KontakController;
 use App\Http\Controllers\layanan\PengajuanPenggunaController;
+use App\Http\Controllers\TestController;
+use App\Http\Controllers\layanan\KlasifikasiIdentitasPemohonController;
 
 /*
 |--------------------------------------------------------------------------
@@ -324,6 +326,16 @@ Route::middleware(['auth', 'role:admin,kepala'])->group(function () {
     Route::get('layanan/identitas-layanan/show/{identitas}', [IdentitasLayananController::class, 'show'])->name('layanan.identitas_pemohon.show');
     Route::get('layanan/identitas-layanan/search/{search}', [IdentitasLayananController::class, 'search'])->name('layanan.identitas_pemohon.search');
     
+    // Klasifikasi Identitas Pemohon
+    Route::get('layanan/klasifikasi-identitas', [KlasifikasiIdentitasPemohonController::class, 'index'])->name('layanan.klasifikasi');
+    Route::get('layanan/klasifikasi-identitas/create', [KlasifikasiIdentitasPemohonController::class, 'create'])->name('layanan.klasifikasi.create');
+    Route::post('layanan/klasifikasi-identitas', [KlasifikasiIdentitasPemohonController::class, 'store'])->name('layanan.klasifikasi.store');
+    Route::get('layanan/klasifikasi-identitas/edit/{klasifikasi}', [KlasifikasiIdentitasPemohonController::class, 'edit'])->name('layanan.klasifikasi.edit');
+    Route::put('layanan/klasifikasi-identitas/update/{klasifikasi}', [KlasifikasiIdentitasPemohonController::class, 'update'])->name('layanan.klasifikasi.update');
+    Route::delete('layanan/klasifikasi-identitas/destroy/{klasifikasi}', [KlasifikasiIdentitasPemohonController::class, 'destroy'])->name('layanan.klasifikasi.destroy');
+    Route::get('layanan/klasifikasi-identitas/show/{klasifikasi}', [KlasifikasiIdentitasPemohonController::class, 'show'])->name('layanan.klasifikasi.show');
+    Route::get('layanan/klasifikasi-identitas/search/{search}', [KlasifikasiIdentitasPemohonController::class, 'search'])->name('layanan.klasifikasi.search');
+    
     // Daftar Layanan
     Route::get('layanan/daftar-layanan', [DaftarLayananController::class, 'index'])->name('layanan.daftar');
     Route::get('layanan/daftar-layanan/create', [DaftarLayananController::class, 'create'])->name('layanan.daftar.create');
@@ -368,6 +380,8 @@ Route::middleware(['auth', 'role:admin,kepala'])->group(function () {
     Route::post('adm/kategori-surat/{kategori}/preview-template', [KategoriSuratController::class, 'previewTemplate'])->name('adm.kategori-surat.preview-template');
     Route::get('adm/kategori-surat/{kategori}/template', [KategoriSuratController::class, 'showTemplate'])->name('adm.kategori-surat.template');
     Route::post('adm/kategori-surat/{kategori}/generate-pdf', [KategoriSuratController::class, 'generatePdf'])->name('adm.kategori-surat.generate-pdf');
+    Route::post('adm/kategori-surat/{kategori}/generate-blade', [KategoriSuratController::class, 'generateBladeTemplate'])->name('adm.kategori-surat.generate-blade');
+    Route::get('adm/kategori-surat/{kategori}/preview-blade', [KategoriSuratController::class, 'previewBladeTemplate'])->name('adm.kategori-surat.preview-blade');
     Route::post('adm/kategori-surat/{kategori}/detect-positions', [KategoriSuratController::class, 'detectVariablePositionsApi'])->name('adm.kategori-surat.detect-positions');
     Route::post('adm/kategori-surat/{kategori}/test-replacement', [KategoriSuratController::class, 'testVariableReplacement'])->name('adm.kategori-surat.test-replacement');
     
@@ -477,6 +491,46 @@ Route::get('/test-fpdi-simple', function() {
         ]);
     }
 });
+
+// API routes for AJAX requests
+Route::get('/api/pemohon/{id}', function($id) {
+    try {
+        // Ambil data dari duk_pelayanan dan join dengan data identitas
+        $pelayanan = \DB::table('duk_pelayanan as dp')
+            ->where('dp.id', $id)
+            ->first();
+            
+        if (!$pelayanan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data pelayanan tidak ditemukan'
+            ], 404);
+        }
+        
+        // Ambil data identitas pemohon untuk pelayanan ini
+        $dataIdentitas = \DB::table('duk_data_identitas_pemohon as ddip')
+            ->join('duk_identitas_pemohon as dip', 'ddip.identitas_pemohon_id', '=', 'dip.id')
+            ->where('ddip.pelayanan_id', $id)
+            ->select('dip.nama_field', 'ddip.nilai', 'dip.tipe_field')
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'pelayanan' => $pelayanan,
+                'identitas' => $dataIdentitas
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+        ], 500);
+    }
+})->name('api.pemohon.show');
+
+// Test route for debugging pelayanan data
+Route::get('/test-pelayanan/{id}', [\App\Http\Controllers\TestController::class, 'testPelayananData']);
 
 
 

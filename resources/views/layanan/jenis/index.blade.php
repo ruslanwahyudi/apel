@@ -91,6 +91,21 @@
                 <input type="hidden" name="jenis_pelayanan_id" id="jenis_pelayanan_id">
                 <div class="modal-body">
                     <div class="form-group">
+                        <label for="klasifikasi_id">Klasifikasi <span class="text-danger">*</span></label>
+                        <select class="form-control" id="klasifikasi_id" name="klasifikasi_id" required>
+                            <option value="">Pilih Klasifikasi</option>
+                            @php
+                                $klasifikasiList = \App\Models\Layanan\KlasifikasiIdentitasPemohon::where('status', true)
+                                    ->orderBy('urutan')
+                                    ->get();
+                            @endphp
+                            @foreach($klasifikasiList as $klasifikasi)
+                                <option value="{{ $klasifikasi->id }}">{{ $klasifikasi->nama_klasifikasi }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group">
                         <label for="nama_field">Nama Field <span class="text-danger">*</span></label>
                         <input type="hidden" name="id" id="id">
                         <input type="text" class="form-control" id="nama_field" name="nama_field" required>
@@ -114,7 +129,7 @@
 
                     <div class="form-group">
                         <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" checked id="required" name="required" value="1">
+                            <input type="checkbox" class="custom-control-input" id="required" name="required" value="1">
                             <label class="custom-control-label" for="required">Required</label>
                         </div>
                     </div>
@@ -208,10 +223,60 @@ $(document).ready(function() {
                                         <button class="btn btn-primary btn-sm add-identitas" data-id="${jenis.id}"><i class="fa fa-plus"> Tambah Identitas </i></button>
                                     </div>
                                     <div id="identitas-list-${jenis.id}" class="ml-0">
-                                        ${jenis.identitas_pemohon.length > 0 ? `<ul style="display: flex; flex-direction: column; gap: 1px; padding-left: 8px;">${jenis.identitas_pemohon.map(identitas_pemohon => `<li>
-                                        <button class="btn btn-danger btn-sm delete-identitas" data-id="${identitas_pemohon.id}"><i class="fa fa-trash"></i></button>
-                                        <button class="btn btn-primary btn-sm edit-identitas" data-id="${identitas_pemohon.id}"><i class="fa fa-edit"></i></button>
-                                        ${identitas_pemohon.nama_field} (${identitas_pemohon.required ? 'Wajib' : 'Tidak Wajib'})  </li>`).join('')}</ul>` : '-'}
+                                        ${jenis.identitas_pemohon.length > 0 ? 
+                                            (() => {
+                                                // Group identitas_pemohon by klasifikasi_id
+                                                const groupedData = {};
+                                                jenis.identitas_pemohon.forEach(item => {
+                                                    const klasifikasiId = item.klasifikasi_id || 'undefined';
+                                                    if (!groupedData[klasifikasiId]) {
+                                                        groupedData[klasifikasiId] = [];
+                                                    }
+                                                    groupedData[klasifikasiId].push(item);
+                                                });
+                                                
+                                                // Render each group with heading
+                                                let html = '<div style="display: flex; flex-direction: column; gap: 15px;">';
+                                                
+                                                for (const [klasifikasiId, items] of Object.entries(groupedData)) {
+                                                    if (klasifikasiId !== 'undefined') {
+                                                        const klasifikasi = items[0].klasifikasi ? items[0].klasifikasi.nama_klasifikasi : 'Lainnya';
+                                                        html += `<div class="card">
+                                                            <div class="card-header bg-primary text-white p-2">
+                                                                ${klasifikasi}
+                                                            </div>
+                                                            <div class="card-body p-2">
+                                                                <ul style="display: flex; flex-direction: column; gap: 1px; padding-left: 8px; margin-bottom: 0;">
+                                                                ${items.map(identitas_pemohon => `<li>
+                                                                    <button class="btn btn-danger btn-sm delete-identitas" data-id="${identitas_pemohon.id}"><i class="fa fa-trash"></i></button>
+                                                                    <button class="btn btn-primary btn-sm edit-identitas" data-id="${identitas_pemohon.id}"><i class="fa fa-edit"></i></button>
+                                                                    ${identitas_pemohon.nama_field} (${identitas_pemohon.required ? 'Wajib' : 'Tidak Wajib'})
+                                                                </li>`).join('')}
+                                                                </ul>
+                                                            </div>
+                                                        </div>`;
+                                                    } else {
+                                                        html += `<div class="card">
+                                                            <div class="card-header bg-secondary text-white p-2">
+                                                                Belum Diklasifikasi
+                                                            </div>
+                                                            <div class="card-body p-2">
+                                                                <ul style="display: flex; flex-direction: column; gap: 1px; padding-left: 8px; margin-bottom: 0;">
+                                                                ${items.map(identitas_pemohon => `<li>
+                                                                    <button class="btn btn-danger btn-sm delete-identitas" data-id="${identitas_pemohon.id}"><i class="fa fa-trash"></i></button>
+                                                                    <button class="btn btn-primary btn-sm edit-identitas" data-id="${identitas_pemohon.id}"><i class="fa fa-edit"></i></button>
+                                                                    ${identitas_pemohon.nama_field} (${identitas_pemohon.required ? 'Wajib' : 'Tidak Wajib'})
+                                                                </li>`).join('')}
+                                                                </ul>
+                                                            </div>
+                                                        </div>`;
+                                                    }
+                                                }
+                                                
+                                                html += '</div>';
+                                                return html;
+                                            })()
+                                         : '-'}
                                     </div>
                                 </div>
                             </td>
@@ -255,16 +320,61 @@ $(document).ready(function() {
 
     $(document).on('click', '.edit-identitas', function() {
         var identitasId = $(this).data('id');
+        
+        // Reset form sebelum memuat data baru
+        $('#identitasForm')[0].reset();
+        
+        // Tampilkan loading indicator
+        $('#identitasModal .modal-body').append('<div id="loading-indicator" class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div></div>');
+        
         $.ajax({
             url: "{{ route('layanan.identitas_pemohon.show', ['identitas' => ':identitasId']) }}".replace(':identitasId', identitasId),
             method: 'GET',
             success: function(response) {
-                $('#identitasForm')[0].reset();
+                // Hapus loading indicator
+                $('#loading-indicator').remove();
+                
+                console.log('Edit identitas response:', response);
+                
+                // Isi form dengan data yang diterima
                 $('#identitasForm').find('input[name="jenis_pelayanan_id"]').val(response.jenis_pelayanan_id);
                 $('#identitasForm').find('input[name="nama_field"]').val(response.nama_field);
                 $('#identitasForm').find('select[name="tipe_field"]').val(response.tipe_field);
+                
+                // Tangani klasifikasi_id dengan lebih baik
+                var klasifikasiId = response.klasifikasi_id;
+                console.log('Setting klasifikasi_id to:', klasifikasiId);
+                
+                // Debug - tampilkan semua option yang tersedia
+                var options = [];
+                $('#identitasForm select[name="klasifikasi_id"] option').each(function() {
+                    options.push({ value: $(this).val(), text: $(this).text() });
+                });
+                console.log('Available klasifikasi options:', options);
+                
+                $('#identitasForm').find('select[name="klasifikasi_id"]').val(klasifikasiId);
+                
+                // Check jika nilai klasifikasi_id dipilih dengan benar
+                setTimeout(function() {
+                    var selectedVal = $('#identitasForm').find('select[name="klasifikasi_id"]').val();
+                    console.log('Selected klasifikasi_id after setting:', selectedVal);
+                    
+                    // Jika tidak terpilih dengan benar, coba lagi
+                    if (klasifikasiId && selectedVal != klasifikasiId) {
+                        $('#identitasForm').find('select[name="klasifikasi_id"]').val(klasifikasiId);
+                        console.log('Re-setting klasifikasi_id to:', klasifikasiId);
+                    }
+                }, 100);
+                
                 $('#identitasForm').find('input[name="required"]').prop('checked', response.required);
                 $('#identitasForm').find('input[name="id"]').val(response.id);
+            },
+            error: function(xhr) {
+                // Hapus loading indicator
+                $('#loading-indicator').remove();
+                
+                console.error('Error loading identitas data:', xhr);
+                swal("Error!", "Terjadi kesalahan saat memuat data identitas.", "error");
             }
         });
 
@@ -360,30 +470,73 @@ $(document).ready(function() {
 
     // Form submit handler
     $('#identitasForm').submit(function(e) {
-        console.log('test');
         e.preventDefault();
+        
+        // Explicitly handle required checkbox
+        let isRequired = $('#identitasForm').find('input[name="required"]').is(':checked') ? 1 : 0;
+        
+        // Create a FormData object for more control
+        let formData = new FormData(this);
+        
+        // Set required value explicitly
+        formData.set('required', isRequired);
+        
+        // Convert FormData to URL-encoded string for ajax
+        let formParams = new URLSearchParams(formData).toString();
+        
+        console.log('Form data to submit:', formParams);
+        
+        // Log form field values for debugging
+        let debugData = {
+            id: $('#identitasForm').find('input[name="id"]').val(),
+            jenis_pelayanan_id: $('#identitasForm').find('input[name="jenis_pelayanan_id"]').val(),
+            klasifikasi_id: $('#identitasForm').find('select[name="klasifikasi_id"]').val(),
+            nama_field: $('#identitasForm').find('input[name="nama_field"]').val(),
+            tipe_field: $('#identitasForm').find('select[name="tipe_field"]').val(),
+            required: isRequired
+        };
+        console.log('Debug form values:', debugData);
+        
+        // Determine URL and method
         let url = '';
         let method = '';
         if ($('#identitasForm').find('input[name="id"]').val() == '') {
             url = "{{ route('layanan.identitas_pemohon.store') }}";
             method = 'POST';
-        }else{
+        } else {
             url = "{{ route('layanan.identitas_pemohon.update', ['identitas' => ':identitasId']) }}".replace(':identitasId', $('#identitasForm').find('input[name="id"]').val());
             method = 'PUT';
         }
-
+        
+        // Show loading indicator
+        $('#identitasModal .modal-footer').prepend('<div id="submit-loading" class="mr-2"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="sr-only">Loading...</span></div></div>');
+        
         $.ajax({
             url: url,
             method: method,
-            data: $(this).serialize(),
+            data: formParams,
             success: function(response) {
+                // Remove loading indicator
+                $('#submit-loading').remove();
+                
+                console.log('Submit success response:', response);
                 $('#identitasModal').modal('hide');
                 swal("Berhasil!", response.message, "success");
                 loadJenis();
                 $('#identitasForm')[0].reset();
             },
             error: function(xhr) {
-                swal("Error!", "Terjadi kesalahan saat menyimpan data.", "error");
+                // Remove loading indicator
+                $('#submit-loading').remove();
+                
+                console.error('Submit error:', xhr);
+                let errorMsg = 'Terjadi kesalahan saat menyimpan data.';
+                
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                
+                swal("Error!", errorMsg, "error");
             }
         });
     });

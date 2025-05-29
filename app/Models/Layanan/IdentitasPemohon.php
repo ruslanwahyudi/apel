@@ -12,6 +12,7 @@ class IdentitasPemohon extends Model
 
     protected $fillable = [
         'jenis_pelayanan_id',
+        'klasifikasi_id',
         'nama_field',
         'tipe_field',
         'required'
@@ -35,5 +36,13 @@ class IdentitasPemohon extends Model
     public function dataIdentitas(): HasMany
     {
         return $this->hasMany(DataIdentitasPemohon::class, 'identitas_pemohon_id');
+    }
+
+    /**
+     * Get the klasifikasi that owns the identitas pemohon.
+     */
+    public function klasifikasi(): BelongsTo
+    {
+        return $this->belongsTo(KlasifikasiIdentitasPemohon::class, 'klasifikasi_id');
     }
 } 

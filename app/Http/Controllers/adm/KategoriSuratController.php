@@ -4,6 +4,7 @@ namespace App\Http\Controllers\adm;
 
 use App\Http\Controllers\Controller;
 use App\Models\adm\KategoriSurat;
+use App\Models\Layanan\JenisPelayanan;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -43,15 +44,46 @@ class KategoriSuratController extends Controller
     {
         $request->validate([
             'nama' => 'required|string|max:255|unique:kategori_surat,nama',
+            'blade_template_name' => 'nullable|string|max:255',
+            'blade_template_variables' => 'nullable|array',
+            'template_type' => 'required|in:blade,text,pdf,docx',
             'template_surat' => 'nullable|string',
             'template_variables' => 'nullable|array',
             'header_template' => 'nullable|string',
             'header_variables' => 'nullable|array',
-            'header_type' => 'nullable|in:simple,full'
+            'header_type' => 'nullable|in:simple,full',
+            'tipe_surat' => 'required|in:layanan,non_layanan',
+            'jenis_pelayanan_id' => 'nullable|exists:duk_jenis_pelayanan,id|required_if:tipe_surat,layanan'
         ]);
 
-        $data = $request->only(['nama', 'template_surat', 'header_template', 'header_type']);
+        $data = $request->only([
+            'nama', 
+            'blade_template_name', 
+            'template_type', 
+            'template_surat', 
+            'header_template', 
+            'header_type',
+            'tipe_surat',
+            'jenis_pelayanan_id'
+        ]);
         
+        // Process blade template variables
+        if ($request->has('blade_template_variables') && is_array($request->blade_template_variables)) {
+            $variables = [];
+            foreach ($request->blade_template_variables as $var) {
+                if (!empty($var['name']) && !empty($var['label'])) {
+                    $variables[] = [
+                        'name' => $var['name'],
+                        'label' => $var['label'],
+                        'type' => $var['type'] ?? 'text',
+                        'required' => isset($var['required']) ? (bool)$var['required'] : false,
+                        'default_value' => $var['default_value'] ?? ''
+                    ];
+                }
+            }
+            $data['blade_template_variables'] = $variables;
+        }
+
         // Process template variables
         if ($request->has('template_variables') && is_array($request->template_variables)) {
             $variables = [];
@@ -105,19 +137,32 @@ class KategoriSuratController extends Controller
     {
         $request->validate([
             'nama' => 'required|string|max:255|unique:kategori_surat,nama,' . $kategori->id,
+            'blade_template_name' => 'nullable|string|max:255',
+            'blade_template_variables' => 'nullable|array',
             'template_surat' => 'nullable|string',
             'template_variables' => 'nullable|array',
             'header_template' => 'nullable|string',
             'header_variables' => 'nullable|array',
             'header_type' => 'nullable|in:simple,full',
-            'template_type' => 'required|in:text,pdf,docx',
+            'template_type' => 'required|in:blade,text,pdf,docx',
             'pdf_template' => 'nullable|file|mimes:pdf|max:10240',
             'pdf_form_fields' => 'nullable|array',
             'docx_template' => 'nullable|file|mimes:docx|max:10240',
-            'docx_form_fields' => 'nullable|array'
+            'docx_form_fields' => 'nullable|array',
+            'tipe_surat' => 'required|in:layanan,non_layanan',
+            'jenis_pelayanan_id' => 'nullable|exists:duk_jenis_pelayanan,id|required_if:tipe_surat,layanan'
         ]);
 
-        $data = $request->only(['nama', 'template_surat', 'header_template', 'header_type', 'template_type']);
+        $data = $request->only([
+            'nama', 
+            'blade_template_name', 
+            'template_surat', 
+            'header_template', 
+            'header_type', 
+            'template_type',
+            'tipe_surat',
+            'jenis_pelayanan_id'
+        ]);
         
         // Handle PDF upload
         if ($request->hasFile('pdf_template')) {
@@ -143,6 +188,23 @@ class KategoriSuratController extends Controller
             $data['docx_template_path'] = $path;
             
             \Log::info("DOCX uploaded: Original name = {$originalName}, Sanitized = {$filename}");
+        }
+        
+        // Process blade template variables
+        if ($request->has('blade_template_variables') && is_array($request->blade_template_variables)) {
+            $variables = [];
+            foreach ($request->blade_template_variables as $var) {
+                if (!empty($var['name']) && !empty($var['label'])) {
+                    $variables[] = [
+                        'name' => $var['name'],
+                        'label' => $var['label'],
+                        'type' => $var['type'] ?? 'text',
+                        'required' => isset($var['required']) ? (bool)$var['required'] : false,
+                        'default_value' => $var['default_value'] ?? ''
+                    ];
+                }
+            }
+            $data['blade_template_variables'] = $variables;
         }
         
         // Process template variables
@@ -255,7 +317,312 @@ class KategoriSuratController extends Controller
 
     public function showTemplate(KategoriSurat $kategori)
     {
+        // Check template type and redirect to appropriate view
+        if ($kategori->template_type === 'blade') {
+            return view('adm.kategori-surat.template-blade', compact('kategori'));
+        }
+        
+        // For legacy templates (text, pdf, docx)
         return view('adm.kategori-surat.template-simple', compact('kategori'));
+    }
+
+    // Method untuk generate surat menggunakan Blade template
+    public function generateBladeTemplate(Request $request, KategoriSurat $kategori)
+    {
+        \Log::info('Generate Blade Template called', [
+            'kategori_id' => $kategori->id,
+            'output' => $request->input('output'),
+            'request_data' => $request->all()
+        ]);
+        
+        if (!$kategori->hasBladeTemplate()) {
+            \Log::error('Template Blade tidak ditemukan', [
+                'kategori_id' => $kategori->id,
+                'blade_template_name' => $kategori->blade_template_name
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Template Blade tidak ditemukan'
+            ], 404);
+        }
+
+        // Validasi input berdasarkan template variables
+        $rules = [];
+        if ($kategori->blade_template_variables) {
+            foreach ($kategori->blade_template_variables as $variable) {
+                $rule = [];
+                
+                // Only apply required validation for HTML preview, not for PDF
+                if ($variable['required'] && $request->output !== 'pdf') {
+                    $rule[] = 'required';
+                }
+                
+                if ($variable['type'] === 'date') {
+                    $rule[] = 'nullable|date';
+                } elseif ($variable['type'] === 'number') {
+                    $rule[] = 'nullable|numeric';
+                } else {
+                    $rule[] = 'nullable|string';
+                }
+                
+                if (!empty($rule)) {
+                    $rules[$variable['name']] = implode('|', $rule);
+                }
+            }
+        }
+
+        // Tambahan validasi untuk surat layanan
+        if ($kategori->isLayanan()) {
+            $rules['pemohon_id'] = 'required|exists:duk_pelayanan,id';
+        }
+
+        // Validate with custom error handling
+        try {
+            $request->validate($rules);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation failed', [
+                'kategori_id' => $kategori->id,
+                'errors' => $e->errors(),
+                'input' => $request->all(),
+                'output_type' => $request->output
+            ]);
+            
+            // For PDF requests, validation should not block generation
+            if ($request->output === 'pdf') {
+                \Log::info('PDF generation proceeding despite validation errors', [
+                    'kategori_id' => $kategori->id,
+                    'errors' => $e->errors()
+                ]);
+                // Continue with PDF generation even with validation errors
+            } else {
+                // For AJAX requests, return JSON error
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Validation failed',
+                        'errors' => $e->errors()
+                    ], 422);
+                }
+                
+                // For regular form submission, redirect back with errors
+                throw $e;
+            }
+        }
+
+        // Prepare data untuk template berdasarkan tipe surat
+        $templateData = [
+            'kategori' => $kategori,
+            'generated_at' => now(),
+            'nomor_surat' => $this->generateNomorSurat($kategori)
+        ];
+
+        // Jika surat layanan dan ada pemohon_id, ambil data dari DUK
+        if ($kategori->isLayanan() && isset($request->pemohon_id)) {
+            \Log::info('Processing layanan surat with DUK data', [
+                'kategori_id' => $kategori->id,
+                'pemohon_id' => $request->pemohon_id,
+                'kategori_tipe' => $kategori->tipe_surat
+            ]);
+            
+            // Ambil data dari DUK
+            $dukData = $kategori->getVariables($request->pemohon_id);
+            
+            \Log::info('DUK data retrieved', [
+                'duk_data' => $dukData,
+                'duk_data_count' => count($dukData)
+            ]);
+            
+            // Ambil data pelayanan dasar
+            $pelayananData = \DB::table('duk_pelayanan')
+                ->where('id', $request->pemohon_id)
+                ->first();
+            
+            \Log::info('Pelayanan data retrieved', [
+                'pelayanan_data' => $pelayananData ? (array) $pelayananData : null
+            ]);
+            
+            // Merge all data: DUK + pelayanan + form input - avoid overwriting with empty values
+            $mergedData = $dukData;
+            
+            // Add pelayanan data if available
+            if ($pelayananData) {
+                $pelayananArray = (array)$pelayananData;
+                foreach ($pelayananArray as $key => $value) {
+                    if (!empty($value) || !isset($mergedData[$key])) {
+                        $mergedData[$key] = $value;
+                    }
+                }
+            }
+            
+            // Add form data - giving priority to form input over other sources
+            foreach ($request->all() as $key => $value) {
+                if (!empty($value) || !isset($mergedData[$key])) {
+                    $mergedData[$key] = $value;
+                }
+            }
+            
+            $templateData['data'] = $mergedData;
+            
+            \Log::info('Final template data for layanan surat', [
+                'kategori_id' => $kategori->id,
+                'pemohon_id' => $request->pemohon_id,
+                'duk_data_count' => count($dukData),
+                'pelayanan_data' => $pelayananData ? 'found' : 'not found',
+                'form_data_count' => count($request->all()),
+                'merged_data_keys' => array_keys($templateData['data']),
+                'merged_data' => $templateData['data']
+            ]);
+        } else {
+            // Untuk surat non-layanan, gunakan data form langsung
+            $templateData['data'] = $request->all();
+            
+            \Log::info('Processing non-layanan surat with manual data', [
+                'kategori_id' => $kategori->id,
+                'kategori_tipe' => $kategori->tipe_surat,
+                'manual_data_count' => count($request->all()),
+                'manual_data' => $request->all()
+            ]);
+        }
+
+        try {
+            // Generate HTML dari Blade template
+            $html = view($kategori->getBladeTemplatePath(), $templateData)->render();
+            
+            \Log::info('Blade template rendered successfully', [
+                'kategori_id' => $kategori->id,
+                'html_length' => strlen($html),
+                'template_path' => $kategori->getBladeTemplatePath()
+            ]);
+            
+            // Convert ke PDF jika diperlukan
+            if ($request->output === 'pdf') {
+                \Log::info('Generating PDF', [
+                    'kategori_id' => $kategori->id,
+                    'html_length' => strlen($html)
+                ]);
+                
+                $pdf = Pdf::loadHTML($html)
+                    ->setPaper('a4', 'portrait')
+                    ->setOptions([
+                        'defaultFont' => 'Times-Roman',
+                        'isRemoteEnabled' => true,
+                        'isHtml5ParserEnabled' => true,
+                        'dpi' => 150,
+                        'defaultPaperSize' => 'a4'
+                    ]);
+                
+                // Create filename for streaming in browser
+                $filename = 'surat_' . str_replace(' ', '_', strtolower($kategori->nama)) . '_' . date('Y-m-d_H-i-s') . '.pdf';
+                
+                \Log::info('PDF generated successfully', [
+                    'filename' => $filename
+                ]);
+                
+                // Return PDF as stream response for preview in browser
+                $pdfOutput = $pdf->output();
+                return response($pdfOutput)
+                    ->header('Content-Type', 'application/pdf')
+                    ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
+                    ->header('Content-Length', strlen($pdfOutput))
+                    ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                    ->header('Pragma', 'no-cache')
+                    ->header('Expires', '0');
+            }
+
+            // Return HTML untuk preview atau print
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+                'template_data' => $templateData
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Blade PDF generation failed', [
+                'kategori_id' => $kategori->id,
+                'error' => $e->getMessage(),
+                'template_data_keys' => isset($templateData['data']) ? array_keys($templateData['data']) : []
+            ]);
+            throw new \Exception('Error generating Blade template: ' . $e->getMessage());
+        }
+    }
+
+    // Method untuk preview template
+    public function previewBladeTemplate(Request $request, KategoriSurat $kategori)
+    {
+        if (!$kategori->hasBladeTemplate()) {
+            return view('adm.kategori-surat.template-not-found', compact('kategori'));
+        }
+
+        // Sample data untuk preview
+        $sampleData = [];
+        if ($kategori->blade_template_variables) {
+            foreach ($kategori->blade_template_variables as $variable) {
+                switch ($variable['type']) {
+                    case 'date':
+                        $sampleData[$variable['name']] = date('d F Y');
+                        break;
+                    case 'number':
+                        $sampleData[$variable['name']] = '123';
+                        break;
+                    default:
+                        $sampleData[$variable['name']] = '[' . $variable['label'] . ']';
+                }
+            }
+        }
+
+        $templateData = [
+            'kategori' => $kategori,
+            'data' => $sampleData,
+            'generated_at' => now(),
+            'nomor_surat' => 'PREVIEW/001/2024',
+            'is_preview' => true
+        ];
+
+        return view('adm.kategori-surat.preview-blade', [
+            'kategori' => $kategori,
+            'template_html' => view($kategori->getBladeTemplatePath(), $templateData)->render()
+        ]);
+    }
+
+    private function generateNomorSurat($kategori)
+    {
+        // Logic untuk generate nomor surat otomatis dengan format: jumlah_surat+1/settings.no_surat/bulan/tahun
+        
+        // Ambil jumlah surat dari register_surat
+        $jumlahSurat = \DB::table('register_surat')->count();
+        $nomorUrut = str_pad($jumlahSurat + 1, 3, '0', STR_PAD_LEFT);
+        
+        // Ambil no_surat dari settings
+        $setting = \App\Models\Setting::instance();
+        $noSuratSetting = $setting->no_surat ?? 'DESA';
+        
+        // Format bulan dan tahun
+        $bulan = date('m'); // Format: 01, 02, dst
+        $tahun = date('Y');  // Format: 2025
+        
+        // Format final: 001/DESA/01/2025
+        return "{$nomorUrut}/{$noSuratSetting}/{$bulan}/{$tahun}";
+    }
+    
+    /**
+     * Clean up old generated PDF files (optional cleanup method)
+     * This method can be called periodically to clean up old files if needed
+     */
+    private function cleanupOldGeneratedPdfs()
+    {
+        $generatedPdfsPath = storage_path('app/public/generated_pdfs');
+        
+        if (is_dir($generatedPdfsPath)) {
+            $files = glob($generatedPdfsPath . '/*.pdf');
+            $cutoffTime = time() - (24 * 60 * 60); // 24 hours ago
+            
+            foreach ($files as $file) {
+                if (is_file($file) && filemtime($file) < $cutoffTime) {
+                    unlink($file);
+                }
+            }
+        }
     }
     
     public function detectVariablePositionsApi(Request $request, KategoriSurat $kategori)
@@ -346,22 +713,17 @@ class KategoriSuratController extends Controller
                 $templateAnalysis = null;
             }
             
-            // Save test PDF
-            $filePath = storage_path('app/public/generated_pdfs/' . $filename);
-            
-            if (!is_dir(dirname($filePath))) {
-                mkdir(dirname($filePath), 0755, true);
-            }
-            
-            file_put_contents($filePath, $pdfContent);
+            // Return test PDF as base64 for preview
+            $base64Pdf = base64_encode($pdfContent);
             
             $response = [
                 'success' => true,
-                'test_pdf_url' => asset('storage/generated_pdfs/' . $filename),
+                'test_pdf_base64' => $base64Pdf,
                 'test_data' => $testData,
                 'pdf_fields' => $pdfFields,
                 'message' => $preciseMode ? 'PRECISE Test PDF berhasil di-generate' : 'Test PDF berhasil di-generate',
-                'mode' => $preciseMode ? 'precise' : 'standard'
+                'mode' => $preciseMode ? 'precise' : 'standard',
+                'filename' => $filename
             ];
             
             // Add template analysis if in precise mode
@@ -401,12 +763,13 @@ class KategoriSuratController extends Controller
 
     public function generatePdf(Request $request, KategoriSurat $kategori)
     {
-        // Check if we have DOCX, PDF fields, or text template
+        // Check if we have Blade, DOCX, PDF fields, or text template
+        $hasBladeTemplate = $kategori->template_type === 'blade' && $kategori->hasBladeTemplate();
         $hasDocxTemplate = $kategori->template_type === 'docx' && $kategori->docx_template_path;
         $hasPdfFields = $kategori->template_type === 'pdf' && $kategori->pdf_form_fields;
         $hasTextTemplate = !empty($kategori->template_surat);
         
-        if (!$hasDocxTemplate && !$hasPdfFields && !$hasTextTemplate) {
+        if (!$hasBladeTemplate && !$hasDocxTemplate && !$hasPdfFields && !$hasTextTemplate) {
             return response()->json([
                 'success' => false,
                 'message' => 'Template tidak tersedia. Silakan buat template terlebih dahulu.'
@@ -419,7 +782,9 @@ class KategoriSuratController extends Controller
             
             // Get appropriate fields based on template type
             $templateFields = [];
-            if ($kategori->template_type === 'docx') {
+            if ($kategori->template_type === 'blade') {
+                $templateFields = $kategori->blade_template_variables ?? [];
+            } elseif ($kategori->template_type === 'docx') {
                 $templateFields = $kategori->docx_form_fields ?? [];
             } elseif ($kategori->template_type === 'pdf') {
                 $templateFields = $kategori->pdf_form_fields ?? [];
@@ -437,35 +802,26 @@ class KategoriSuratController extends Controller
             // Generate PDF using appropriate method
             $pdfContent = $this->generatePdfDocument($kategori, $formData, $templateFields);
             
-            // Create filename
-            $filename = 'surat_' . $kategori->id . '_' . time() . '.pdf';
-            $filePath = storage_path('app/public/generated_pdfs/' . $filename);
-            
-            // Create directory if not exists
-            $directory = dirname($filePath);
-            if (!is_dir($directory)) {
-                mkdir($directory, 0755, true);
-            }
-            
-            // Save PDF file
-            file_put_contents($filePath, $pdfContent);
+            // Create filename for download
+            $filename = 'surat_' . str_replace(' ', '_', strtolower($kategori->nama)) . '_' . date('Y-m-d_H-i-s') . '.pdf';
             
             $message = 'PDF berhasil di-generate dengan data yang diisi';
-            if ($kategori->template_type === 'docx' && $kategori->docx_template_path) {
+            if ($kategori->template_type === 'blade' && $kategori->hasBladeTemplate()) {
+                $message = 'PDF berhasil di-generate dari Blade template dengan akurasi 100%. Semua variabel telah diganti dengan data yang Anda input.';
+            } elseif ($kategori->template_type === 'docx' && $kategori->docx_template_path) {
                 $message = 'PDF berhasil di-generate dari template DOCX dengan akurasi 100%. Semua variabel ${nama}, ${tanggal}, dll telah diganti dengan data yang Anda input.';
             } elseif ($kategori->template_type === 'pdf' && $kategori->pdf_template_path) {
                 $message = 'PDF berhasil di-generate. Variabel {{nomor}}, {{tanggal}}, dll telah diganti dengan data yang Anda input.';
             }
             
-            return response()->json([
-                'success' => true,
-                'pdf_url' => asset('storage/generated_pdfs/' . $filename),
-                'message' => $message,
-                'filled_data' => $this->getFilledDataSummary($formData, $templateFields),
-                'filename' => $filename,
-                'template_type' => $kategori->template_type,
-                'original_template_url' => $kategori->pdf_template_path ? asset('storage/' . $kategori->pdf_template_path) : null
-            ]);
+            // Stream PDF directly without saving to storage
+            return response($pdfContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
+                ->header('Content-Length', strlen($pdfContent))
+                ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                ->header('Pragma', 'no-cache')
+                ->header('Expires', '0');
 
         } catch (\Exception $e) {
             return response()->json([
@@ -477,7 +833,12 @@ class KategoriSuratController extends Controller
     
     private function generatePdfDocument($kategori, $formData, $pdfFields)
     {
-        // Check if we have a DOCX template file uploaded (HIGHEST PRIORITY)
+        // Check if we have a Blade template (HIGHEST PRIORITY)
+        if ($kategori->template_type === 'blade' && $kategori->hasBladeTemplate()) {
+            return $this->generateFromBladeTemplate($kategori, $formData);
+        }
+        
+        // Check if we have a DOCX template file uploaded
         if ($kategori->template_type === 'docx' && $kategori->docx_template_path) {
             return $this->generateFromDocxTemplate($kategori, $formData, $kategori->docx_form_fields ?? []);
         }
@@ -489,6 +850,113 @@ class KategoriSuratController extends Controller
         
         // Fallback to text template
         return $this->generateFromTextTemplate($kategori, $formData, $pdfFields);
+    }
+
+    private function generateFromBladeTemplate($kategori, $formData)
+    {
+        // Prepare data untuk template berdasarkan tipe surat
+        $templateData = [
+            'kategori' => $kategori,
+            'generated_at' => now(),
+            'nomor_surat' => $this->generateNomorSurat($kategori)
+        ];
+
+        // Jika surat layanan dan ada pemohon_id, ambil data dari DUK
+        if ($kategori->isLayanan() && isset($formData['pemohon_id'])) {
+            // Ambil data dari DUK
+            $dukData = $kategori->getVariables($formData['pemohon_id']);
+            
+            // Ambil data pelayanan dasar - directly access all fields
+            $pelayananData = \DB::table('duk_pelayanan')
+                ->where('id', $formData['pemohon_id'])
+                ->first();
+            
+            // Log data for debugging
+            \Log::info('Generating PDF from Blade Template with data:', [
+                'pemohon_id' => $formData['pemohon_id'],
+                'duk_data' => $dukData,
+                'pelayanan_data' => $pelayananData ? (array)$pelayananData : 'not found',
+                'form_data' => $formData
+            ]);
+            
+            // Merge all data: DUK + pelayanan + form input - avoid overwriting with empty values
+            $mergedData = $dukData;
+            
+            // Add pelayanan data if available
+            if ($pelayananData) {
+                $pelayananArray = (array)$pelayananData;
+                foreach ($pelayananArray as $key => $value) {
+                    if (!empty($value) || !isset($mergedData[$key])) {
+                        $mergedData[$key] = $value;
+                    }
+                }
+            }
+            
+            // Add form data - giving priority to form input over other sources
+            foreach ($formData as $key => $value) {
+                if (!empty($value) || !isset($mergedData[$key])) {
+                    $mergedData[$key] = $value;
+                }
+            }
+            
+            $templateData['data'] = $mergedData;
+            
+            \Log::info('Final merged data for PDF generation:', [
+                'merged_data_count' => count($mergedData),
+                'merged_keys' => array_keys($mergedData)
+            ]);
+        } else {
+            // Untuk surat non-layanan, gunakan data form langsung
+            $templateData['data'] = $formData;
+            
+            \Log::info('Blade PDF: Using manual data for non-layanan surat', [
+                'kategori_id' => $kategori->id,
+                'manual_data_count' => count($formData)
+            ]);
+        }
+
+        try {
+            // Generate HTML dari Blade template
+            $html = view($kategori->getBladeTemplatePath(), $templateData)->render();
+            
+            \Log::info('Blade PDF: HTML generated successfully', [
+                'kategori_id' => $kategori->id,
+                'html_length' => strlen($html),
+                'template_path' => $kategori->getBladeTemplatePath(),
+                'template_data_keys' => array_keys($templateData['data'] ?? [])
+            ]);
+            
+            // Convert ke PDF menggunakan DomPDF dengan setting optimal
+            $pdf = Pdf::loadHTML($html)
+                ->setPaper('a4', 'portrait')
+                ->setOptions([
+                    'defaultFont' => 'Times-Roman',
+                    'isRemoteEnabled' => true,
+                    'isHtml5ParserEnabled' => true,
+                    'dpi' => 150,
+                    'defaultPaperSize' => 'a4',
+                    'chroot' => public_path(),
+                    'debugKeepTemp' => false,
+                    'debugCss' => false,
+                    'debugLayout' => false,
+                    'debugLayoutLines' => false,
+                    'debugLayoutBlocks' => false,
+                    'debugLayoutInline' => false,
+                    'debugLayoutPaddingBox' => false
+                ]);
+            
+            // Returned for streaming in browser rather than forced download
+            $pdfOutput = $pdf->output();
+            return $pdfOutput;
+
+        } catch (\Exception $e) {
+            \Log::error('Blade PDF generation failed', [
+                'kategori_id' => $kategori->id,
+                'error' => $e->getMessage(),
+                'template_data_keys' => isset($templateData['data']) ? array_keys($templateData['data']) : []
+            ]);
+            throw new \Exception('Error generating Blade template: ' . $e->getMessage());
+        }
     }
     
     private function generateFromPdfTemplate($kategori, $formData, $pdfFields)
@@ -2150,10 +2618,7 @@ class KategoriSuratController extends Controller
             }
             
             // Save filled DOCX to temporary file
-            $tempDocxPath = storage_path('app/temp/filled_' . time() . '.docx');
-            if (!is_dir(dirname($tempDocxPath))) {
-                mkdir(dirname($tempDocxPath), 0755, true);
-            }
+            $tempDocxPath = sys_get_temp_dir() . '/filled_' . uniqid() . '.docx';
             
             $templateProcessor->saveAs($tempDocxPath);
             \Log::info('Filled DOCX saved to: ' . $tempDocxPath);
@@ -2388,10 +2853,7 @@ class KategoriSuratController extends Controller
             }
             
             // Save to temporary HTML file
-            $tempHtmlPath = storage_path('app/temp/temp_' . time() . '.html');
-            if (!is_dir(dirname($tempHtmlPath))) {
-                mkdir(dirname($tempHtmlPath), 0755, true);
-            }
+            $tempHtmlPath = sys_get_temp_dir() . '/temp_' . uniqid() . '.html';
             
             $htmlWriter->save($tempHtmlPath);
             

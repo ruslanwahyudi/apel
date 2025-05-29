@@ -80,10 +80,11 @@
 									<table id="example4" class="table table-bordered table-hover display">
 									<thead>
 										<tr>
-                                            <th>No</th>
-                                            <th>Nama</th>
-                                            <th>Template</th>
-                                            <th>Action</th>
+                                            <th style="width: 10px;">No</th>
+                                            <th style="width: 30%;">Nama</th>
+                                            <th style="width: 10%;">Tipe Surat</th>
+                                            <th style="width: 10%;">Template</th>
+                                            <th style="width: 40%;">Action</th>
 										</tr>
 									</thead>									
 									<tbody id="data-table-body">
@@ -123,7 +124,7 @@
                     method: "GET",
                     data: { search: search },
                     beforeSend: function() {
-                        $('#data-table-body').html('<tr><td colspan="4" class="text-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></td></tr>');
+                        $('#data-table-body').html('<tr><td colspan="5" class="text-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></td></tr>');
                     },
                     success: function(response) {
                         console.log(response);
@@ -131,39 +132,50 @@
                         response.forEach((kategori, index) => {
                             // Template status with type info
                             let templateBadge = '';
-                            if (kategori.template_type === 'docx' && kategori.docx_template_path) {
-                                templateBadge = '<span class="badge badge-warning">DOCX Template ⭐</span>';
-                            } else if (kategori.template_type === 'pdf' && kategori.pdf_template_path) {
-                                templateBadge = '<span class="badge badge-primary">PDF Template</span>';
-                            } else if (kategori.template_type === 'text' && kategori.template_surat) {
-                                templateBadge = '<span class="badge badge-success">Text Template</span>';
+                            let templateButton = '';
+                            let previewButton = '';
+                            
+                            // Tipe surat badge
+                            let tipeSuratBadge = '';
+                            if (kategori.tipe_surat === 'layanan') {
+                                tipeSuratBadge = '<span class="badge badge-primary">Layanan (DUK)</span>';
                             } else {
-                                templateBadge = '<span class="badge badge-secondary">Belum Ada</span>';
+                                tipeSuratBadge = '<span class="badge badge-secondary">Non-Layanan (Manual)</span>';
                             }
                             
-                            // Template viewer button
-                            let templateButton = '';
-                            if ((kategori.template_type === 'docx' && kategori.docx_template_path) ||
-                                (kategori.template_type === 'pdf' && kategori.pdf_template_path) || 
-                                (kategori.template_type === 'text' && kategori.template_surat)) {
+                            if (kategori.blade_template_name) {
+                                templateBadge = '<span class="badge badge-success">Blade Template ✓</span>';
+                                previewButton = `<a href="/adm/kategori-surat/${kategori.id}/preview-blade" class="btn btn-primary btn-sm" target="_blank">Preview <i class="fa fa-eye"></i></a>`;
+                                templateButton = `<a href="/adm/kategori-surat/${kategori.id}/template" class="btn btn-info btn-sm">Generate <i class="fa fa-file-pdf-o"></i></a>`;
+                            } else if (kategori.template_type === 'docx' && kategori.docx_template_path) {
+                                templateBadge = '<span class="badge badge-warning">DOCX Template (Legacy)</span>';
                                 templateButton = `<a href="/adm/kategori-surat/${kategori.id}/template" class="btn btn-info btn-sm">Template <i class="fa fa-file-text"></i></a>`;
+                            } else if (kategori.template_type === 'pdf' && kategori.pdf_template_path) {
+                                templateBadge = '<span class="badge badge-primary">PDF Template (Legacy)</span>';
+                                templateButton = `<a href="/adm/kategori-surat/${kategori.id}/template" class="btn btn-info btn-sm">Template <i class="fa fa-file-text"></i></a>`;
+                            } else if (kategori.template_type === 'text' && kategori.template_surat) {
+                                templateBadge = '<span class="badge badge-secondary">Text Template (Legacy)</span>';
+                                templateButton = `<a href="/adm/kategori-surat/${kategori.id}/template" class="btn btn-info btn-sm">Template <i class="fa fa-file-text"></i></a>`;
+                            } else {
+                                templateBadge = '<span class="badge badge-danger">Belum Ada Template</span>';
                             }
                             
                             rows += `
                                 <tr>
                                     <td>${index + 1}</td>
                                     <td>${kategori.nama}</td>
+                                    <td>${tipeSuratBadge}</td>
                                     <td>${templateBadge}</td>
-                                    <td>
-                                        ${templateButton}
-                                        @if (can('kategori surat', 'can_update'))
-                                            <button class="btn btn-warning btn-sm edit-kategori-surat" data-id="${kategori.id}" data-name="${kategori.nama}">Edit Lama <i class="fa fa-edit"></i></button>
-                                            <a href="/adm/kategori-surat/${kategori.id}/edit-simple" class="btn btn-success btn-sm">Edit PDF <i class="fa fa-file-pdf-o"></i></a>
-                                        @endif
-                                        @if (can('kategori surat', 'can_delete'))
-                                            <button class="btn btn-danger btn-sm delete-kategori-surat" data-id="${kategori.id}">Hapus <i class="fa fa-trash"></i></button>
-                                        @endif
-                                    </td>
+                                                                    <td>
+                                    ${previewButton}
+                                    ${templateButton}
+                                    @if (can('kategori surat', 'can_update'))
+                                        <a href="/adm/kategori-surat/${kategori.id}/edit" class="btn btn-warning btn-sm">Edit <i class="fa fa-edit"></i></a>
+                                    @endif
+                                    @if (can('kategori surat', 'can_delete'))
+                                        <button class="btn btn-danger btn-sm delete-kategori-surat" data-id="${kategori.id}">Hapus <i class="fa fa-trash"></i></button>
+                                    @endif
+                                </td>
                                 </tr>
                             `;
                         });
@@ -196,7 +208,7 @@
                 url: "{{ route('adm.kategori-surat') }}",
                 method: "GET",
                 beforeSend: function() {
-                    $('#data-table-body').html('<tr><td colspan="4" class="text-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></td></tr>');
+                    $('#data-table-body').html('<tr><td colspan="5" class="text-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></td></tr>');
                 },
                 success: function(response) {
                     let rows = '';
@@ -204,34 +216,45 @@
                     response.forEach((kategori, index) => {
                         // Template status with type info
                         let templateBadge = '';
-                        if (kategori.template_type === 'docx' && kategori.docx_template_path) {
-                            templateBadge = '<span class="badge badge-warning">DOCX Template ⭐</span>';
-                        } else if (kategori.template_type === 'pdf' && kategori.pdf_template_path) {
-                            templateBadge = '<span class="badge badge-primary">PDF Template</span>';
-                        } else if (kategori.template_type === 'text' && kategori.template_surat) {
-                            templateBadge = '<span class="badge badge-success">Text Template</span>';
+                        let templateButton = '';
+                        let previewButton = '';
+                        
+                        // Tipe surat badge
+                        let tipeSuratBadge = '';
+                        if (kategori.tipe_surat === 'layanan') {
+                            tipeSuratBadge = '<span class="badge badge-primary">Layanan (DUK)</span>';
                         } else {
-                            templateBadge = '<span class="badge badge-secondary">Belum Ada</span>';
+                            tipeSuratBadge = '<span class="badge badge-secondary">Non-Layanan (Manual)</span>';
                         }
                         
-                        // Template viewer button
-                        let templateButton = '';
-                        if ((kategori.template_type === 'docx' && kategori.docx_template_path) ||
-                            (kategori.template_type === 'pdf' && kategori.pdf_template_path) || 
-                            (kategori.template_type === 'text' && kategori.template_surat)) {
+                        if (kategori.blade_template_name) {
+                            templateBadge = '<span class="badge badge-success">Blade Template ✓</span>';
+                            previewButton = `<a href="/adm/kategori-surat/${kategori.id}/preview-blade" class="btn btn-primary btn-sm" target="_blank">Preview <i class="fa fa-eye"></i></a>`;
+                            templateButton = `<a href="/adm/kategori-surat/${kategori.id}/template" class="btn btn-info btn-sm">Generate <i class="fa fa-file-pdf-o"></i></a>`;
+                        } else if (kategori.template_type === 'docx' && kategori.docx_template_path) {
+                            templateBadge = '<span class="badge badge-warning">DOCX Template (Legacy)</span>';
                             templateButton = `<a href="/adm/kategori-surat/${kategori.id}/template" class="btn btn-info btn-sm">Template <i class="fa fa-file-text"></i></a>`;
+                        } else if (kategori.template_type === 'pdf' && kategori.pdf_template_path) {
+                            templateBadge = '<span class="badge badge-primary">PDF Template (Legacy)</span>';
+                            templateButton = `<a href="/adm/kategori-surat/${kategori.id}/template" class="btn btn-info btn-sm">Template <i class="fa fa-file-text"></i></a>`;
+                        } else if (kategori.template_type === 'text' && kategori.template_surat) {
+                            templateBadge = '<span class="badge badge-secondary">Text Template (Legacy)</span>';
+                            templateButton = `<a href="/adm/kategori-surat/${kategori.id}/template" class="btn btn-info btn-sm">Template <i class="fa fa-file-text"></i></a>`;
+                        } else {
+                            templateBadge = '<span class="badge badge-danger">Belum Ada Template</span>';
                         }
                         
                         rows += `
                             <tr>
                                 <td>${index + 1}</td>
                                 <td>${kategori.nama}</td>
+                                <td>${tipeSuratBadge}</td>
                                 <td>${templateBadge}</td>
                                 <td>
+                                    ${previewButton}
                                     ${templateButton}
                                     @if (can('kategori surat', 'can_update'))    
-                                        <button class="btn btn-warning btn-sm kategori-surat-edit" data-id="${kategori.id}" data-name="${kategori.nama}">Edit Lama <i class="fa fa-edit"></i></button>
-                                        <a href="/adm/kategori-surat/${kategori.id}/edit-simple" class="btn btn-success btn-sm">Edit PDF <i class="fa fa-file-pdf-o"></i></a>
+                                        <button class="btn btn-warning btn-sm kategori-surat-edit" data-id="${kategori.id}" data-name="${kategori.nama}">Edit <i class="fa fa-edit"></i></button>
                                     @endif
                                     @if (can('kategori surat', 'can_delete'))
                                         <button class="btn btn-danger btn-sm delete-kategori-surat" data-id="${kategori.id}">Hapus <i class="fa fa-trash"></i></button>

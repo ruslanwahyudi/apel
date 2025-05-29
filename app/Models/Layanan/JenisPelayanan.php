@@ -37,4 +37,14 @@ class JenisPelayanan extends Model
     {
         return $this->hasMany(SyaratDokumen::class, 'jenis_pelayanan_id');
     }
+
+    /**
+     * Get unique classifications for this service type's identity fields
+     */
+    public function getUniqueKlasifikasi()
+    {
+        return KlasifikasiIdentitasPemohon::whereHas('identitasPemohon', function($query) {
+            $query->where('jenis_pelayanan_id', $this->id);
+        })->orderBy('urutan')->get();
+    }
 } 

@@ -14,7 +14,7 @@ class JenisLayananController extends Controller
     public function index()
     {
         if (request()->ajax()) {
-            $jenis_layanan = JenisPelayanan::with('identitasPemohon', 'syaratDokumen')->latest()->get();
+            $jenis_layanan = JenisPelayanan::with(['identitasPemohon.klasifikasi', 'syaratDokumen'])->latest()->get();
             
             return response()->json($jenis_layanan);
         }

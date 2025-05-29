@@ -29,21 +29,20 @@ if (!function_exists('can')) {
     
     function generateNoSurat()
     {
+        // Ambil setting no_surat
         $setting = Setting::instance();
-        $noSurat = $setting->no_surat;
-        $tahun = date('Y');
-        $bulan = date('m');
-        // get last number of register surat by year and month
-        $lastSurat = RegisterSurat::whereYear('tanggal_surat', $tahun)
-            ->whereMonth('tanggal_surat', $bulan)
-            ->orderBy('id', 'desc')
-            ->first();
-        $lastNoSurat = $lastSurat ? explode('/', $lastSurat->nomor_surat) : [];
-        $latestRegister = $lastSurat ? $lastNoSurat[0] : 0;
-        // $lastNoSurat = $lastNoSurat ? $lastNoSurat[0] : 0;
-        $nextNoSurat = $latestRegister + 1;
-        $finalNoSurat = $nextNoSurat . '/' . $noSurat . '/' . $bulan . '/' . $tahun;
-        return $finalNoSurat;
+        $noSuratSetting = $setting->no_surat ?? 'DESA';
+        
+        // Ambil jumlah total surat dari register_surat
+        $jumlahSurat = RegisterSurat::count();
+        $nomorUrut = str_pad($jumlahSurat + 1, 3, '0', STR_PAD_LEFT);
+        
+        // Format bulan dan tahun
+        $bulan = date('m'); // Format: 01, 02, dst
+        $tahun = date('Y');  // Format: 2025
+        
+        // Format final: 001/DESA/01/2025
+        return "{$nomorUrut}/{$noSuratSetting}/{$bulan}/{$tahun}";
     }
 
     
