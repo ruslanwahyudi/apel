@@ -19,10 +19,12 @@ class IdentitasLayanan extends Model
         'nama_field',
         'tipe_field',
         'required',
+        'readonly',
     ];
 
     protected $casts = [
-        'required' => 'boolean'
+        'required' => 'boolean',
+        'readonly' => 'boolean'
     ];
 
     public function jenis_pelayanan()

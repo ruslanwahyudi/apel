@@ -63,6 +63,7 @@
                                 <tr>
                                     <th>No</th>
                                     <th>Jenis Layanan</th>
+                                    <th>Label</th>
                                     <th>Nama Field</th>
                                     <th>Tipe Field</th>
                                     <th>Required</th>
@@ -105,6 +106,13 @@
                     <div class="form-group">
                         <label for="nama_field">Nama Field <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="nama_field" name="nama_field" required>
+                        <small class="form-text text-muted">Nama field untuk database/pemrosesan (contoh: nama_lengkap, tempat_lahir)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="label">Label <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="label" name="label" required>
+                        <small class="form-text text-muted">Label yang ditampilkan kepada user (contoh: Nama Lengkap, Tempat Lahir)</small>
                     </div>
 
                     <div class="form-group">
@@ -160,6 +168,7 @@ $(document).ready(function() {
                         <tr>
                             <td>${index + 1}</td>
                             <td>${identitas.jenis_pelayanan ? identitas.jenis_pelayanan.nama_pelayanan : '-'}</td>
+                            <td>${identitas.label || '-'}</td>
                             <td>${identitas.nama_field}</td>
                             <td>${identitas.tipe_field}</td>
                             <td>${identitas.required ? '<span class="badge badge-success">Ya</span>' : '<span class="badge badge-danger">Tidak</span>'}</td>

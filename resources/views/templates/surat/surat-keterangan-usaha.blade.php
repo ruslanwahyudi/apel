@@ -222,7 +222,7 @@
                 </div>
             </div>
             
-            <p>Bahwa orang tersebut benar-benar penduduk desa {{ $kopConfig->desa ?? 'banyupelle' }} kecamatan {{ $kopConfig->kecamatan ?? 'palengaan' }} kabupaten {{ $kopConfig->kabupaten ?? 'pamekasan' }} dan yang bersangkutan benar-benar memiliki usaha {{ $data['jenis_usaha'] ?? '_______________' }} {{ $data['nama_usaha'] ?? '_______________' }}.</p>
+            <p>Bahwa orang tersebut benar-benar penduduk desa {{ $kopConfig->desa ?? 'banyupelle' }} kecamatan {{ $kopConfig->kecamatan ?? 'palengaan' }} kabupaten {{ $kopConfig->kabupaten ?? 'pamekasan' }} dan yang bersangkutan benar-benar memiliki usaha <strong>{{ $data['jenis_usaha'] ?? '_______________' }} {{ $data['nama_usaha'] ?? '_______________' }}</strong>.</p>
             
             <p>Demikian surat keterangan ini dibuat dengan sebenarnya dan dapat dipergunakan sebagaimana mestinya.</p>
         </div>

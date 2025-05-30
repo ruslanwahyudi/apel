@@ -33,8 +33,10 @@ class IdentitasLayananController extends Controller
             'jenis_pelayanan_id' => 'required|exists:duk_jenis_pelayanan,id',
             'klasifikasi_id' => 'nullable|exists:duk_klasifikasi_identitas_pemohon,id',
             'nama_field' => 'required|string|max:255',
+            'label' => 'required|string|max:255',
             'tipe_field' => 'required|string|max:255',
             'required' => 'required|boolean',
+            'readonly' => 'nullable|boolean',
         ]);
         
         \Log::info('Validated data', [
@@ -109,8 +111,10 @@ class IdentitasLayananController extends Controller
             'jenis_pelayanan_id' => 'required|exists:duk_jenis_pelayanan,id',
             'klasifikasi_id' => 'nullable|exists:duk_klasifikasi_identitas_pemohon,id',
             'nama_field' => 'required|string|max:255',
+            'label' => 'required|string|max:255',
             'tipe_field' => 'required|string|max:255',
             'required' => 'required|boolean',
+            'readonly' => 'nullable|boolean',
         ]);
         
         \Log::info('Validated update data', [

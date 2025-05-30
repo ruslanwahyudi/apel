@@ -347,6 +347,8 @@ Route::middleware(['auth', 'role:admin,kepala'])->group(function () {
     Route::delete('layanan/daftar-layanan/destroy/{daftar}', [DaftarLayananController::class, 'destroy'])->name('layanan.daftar.destroy');
     Route::get('layanan/daftar-layanan/search/{search}', [DaftarLayananController::class, 'search'])->name('layanan.daftar.search');
     Route::post('layanan/daftar-layanan/approve/{id}', [DaftarLayananController::class, 'approve'])->name('layanan.approve');
+    Route::post('layanan/daftar-layanan/upload-signed-document/{id}', [DaftarLayananController::class, 'uploadSignedDocument'])->name('layanan.daftar.upload-signed-document');
+    Route::get('layanan/daftar-layanan/download-signed-document/{id}', [DaftarLayananController::class, 'downloadSignedDocument'])->name('layanan.daftar.download-signed-document');
 
     // Pengajuan Pengguna
     Route::get('layanan/pengajuan-pengguna', [PengajuanPenggunaController::class, 'index'])->name('layanan.pengajuan_pengguna');

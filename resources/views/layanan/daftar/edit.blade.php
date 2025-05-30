@@ -216,7 +216,7 @@ $(document).ready(function() {
                     
                     html += '<div class="' + colClass + '">';
                     html += '<div class="form-group mb-3">';
-                    html += '<label for="identitas_' + field.id + '" class="form-label font-weight-semibold">' + field.nama_field;
+                    html += '<label for="identitas_' + field.id + '" class="form-label font-weight-semibold">' + (field.label || field.nama_field);
                     if (field.required) {
                         html += ' <span class="text-danger">*</span>';
                     }

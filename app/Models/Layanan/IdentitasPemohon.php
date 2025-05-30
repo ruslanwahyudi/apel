@@ -14,12 +14,15 @@ class IdentitasPemohon extends Model
         'jenis_pelayanan_id',
         'klasifikasi_id',
         'nama_field',
+        'label',
         'tipe_field',
-        'required'
+        'required',
+        'readonly'
     ];
 
     protected $casts = [
-        'required' => 'boolean'
+        'required' => 'boolean',
+        'readonly' => 'boolean'
     ];
 
     /**

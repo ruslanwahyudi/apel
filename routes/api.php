@@ -101,6 +101,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('layanan/finalisasi/{id}', [LayananController::class, 'finalisasi']);
     Route::get('layanan/approve/{id}', [LayananController::class, 'approve']);
     Route::get('layanan/tandatangan/{id}', [LayananController::class, 'tandatangan']);
+    Route::get('layanan/download-signed-document/{id}', [LayananController::class, 'downloadSignedDocument']);
     Route::post('layanan/reject', [LayananController::class, 'reject']);
 
     

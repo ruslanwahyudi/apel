@@ -22,7 +22,7 @@
     
     // Set default values untuk semua parameter
     $position = $position ?? 'right';
-    $width = $width ?? '250px';
+    $width = '500px';
     $marginTop = $marginTop ?? '40px';
     $marginBottom = $marginBottom ?? '30px';
     $spacingTtd = $spacingTtd ?? '150px';

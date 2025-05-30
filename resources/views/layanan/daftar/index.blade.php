@@ -143,6 +143,50 @@
     </div>
 </div>
 
+<!-- Modal untuk upload dokumen yang sudah ditandatangani -->
+<div class="modal fade" id="uploadSignedDocModal" tabindex="-1" role="dialog" aria-labelledby="uploadSignedDocModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="uploadSignedDocModalLabel">
+                    <i class="fa fa-upload"></i> Upload Dokumen yang Sudah Ditandatangani
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="uploadSignedDocForm" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fa fa-info-circle"></i>
+                        Upload dokumen yang sudah ditandatangani oleh Kepala Desa agar bisa didownload oleh user melalui aplikasi mobile.
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="signed_document">File Dokumen <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control-file" id="signed_document" name="signed_document" 
+                               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
+                        <small class="form-text text-muted">
+                            Format yang didukung: PDF, DOC, DOCX, JPG, JPEG, PNG. Maksimal 10MB.
+                        </small>
+                    </div>
+                    
+                    <input type="hidden" id="layanan_id" name="layanan_id">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fa fa-times"></i> Batal
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fa fa-upload"></i> Upload Dokumen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @section('js')
@@ -239,6 +283,19 @@ $(document).ready(function() {
                                     ${layanan.status.description === 'Belum Diproses' ? 
                                         `<button class="btn btn-success btn-sm approve-layanan mb-1" data-id="${layanan.id}" title="Approve Layanan">
                                             <i class="fa fa-check"></i> Approve
+                                        </button>` : ''
+                                    }
+                                    ${layanan.status_layanan == 8 && !layanan.signed_document_path ? 
+                                        `<button class="btn btn-warning btn-sm upload-signed-doc mb-1" data-id="${layanan.id}" title="Upload Dokumen Ditandatangani">
+                                            <i class="fa fa-upload"></i> Upload Dokumen
+                                        </button>` : ''
+                                    }
+                                    ${layanan.status_layanan == 8 && layanan.signed_document_path ? 
+                                        `<button class="btn btn-primary btn-sm download-signed-doc mb-1" data-id="${layanan.id}" title="Download Dokumen Ditandatangani">
+                                            <i class="fa fa-download"></i> Download
+                                        </button>
+                                        <button class="btn btn-warning btn-sm replace-signed-doc mb-1" data-id="${layanan.id}" title="Ganti Dokumen Ditandatangani">
+                                            <i class="fa fa-refresh"></i> Ganti Dokumen
                                         </button>` : ''
                                     }
                                     <button class="btn btn-warning btn-sm edit-layanan mb-1" data-id="${layanan.id}" title="Edit Layanan">
@@ -417,6 +474,117 @@ $(document).ready(function() {
                 });
             }
         });
+    });
+
+    // Handler untuk upload dokumen yang sudah ditandatangani
+    $('#data-table-body').on('click', '.upload-signed-doc', function() {
+        var layananId = $(this).data('id');
+        $('#layanan_id').val(layananId);
+        $('#uploadSignedDocModalLabel').html('<i class="fa fa-upload"></i> Upload Dokumen yang Sudah Ditandatangani');
+        $('#uploadSignedDocModal .modal-header').removeClass('bg-warning').addClass('bg-success');
+        $('#uploadSignedDocModal .alert-info').html('<i class="fa fa-info-circle"></i> Upload dokumen yang sudah ditandatangani oleh Kepala Desa agar bisa didownload oleh user melalui aplikasi mobile.');
+        $('#uploadSignedDocModal .btn-success').html('<i class="fa fa-upload"></i> Upload Dokumen');
+        $('#uploadSignedDocModal').modal('show');
+    });
+
+    // Handler untuk ganti dokumen yang sudah ditandatangani
+    $('#data-table-body').on('click', '.replace-signed-doc', function() {
+        var layananId = $(this).data('id');
+        
+        swal({
+            title: "Ganti Dokumen?",
+            text: "File dokumen yang lama akan diganti dengan file baru. Apakah Anda yakin?",
+            icon: "warning",
+            buttons: {
+                cancel: {
+                    text: "Batal",
+                    value: null,
+                    visible: true,
+                    className: "",
+                    closeModal: true,
+                },
+                confirm: {
+                    text: "Ya, Ganti",
+                    value: true,
+                    visible: true,
+                    className: "btn-warning",
+                    closeModal: true
+                }
+            },
+            dangerMode: true,
+        })
+        .then((willReplace) => {
+            if (willReplace) {
+                $('#layanan_id').val(layananId);
+                $('#uploadSignedDocModalLabel').html('<i class="fa fa-refresh"></i> Ganti Dokumen yang Sudah Ditandatangani');
+                $('#uploadSignedDocModal .modal-header').removeClass('bg-success').addClass('bg-warning');
+                $('#uploadSignedDocModal .alert-info').html('<i class="fa fa-warning"></i> <strong>Perhatian:</strong> File dokumen yang lama akan diganti dengan file baru. Pastikan file yang akan diupload sudah benar.');
+                $('#uploadSignedDocModal .btn-success').html('<i class="fa fa-refresh"></i> Ganti Dokumen');
+                $('#uploadSignedDocModal').modal('show');
+            }
+        });
+    });
+
+    // Handler untuk download dokumen yang sudah ditandatangani
+    $('#data-table-body').on('click', '.download-signed-doc', function() {
+        var layananId = $(this).data('id');
+        window.open("{{ route('layanan.daftar.download-signed-document', ['id' => ':id']) }}".replace(':id', layananId), '_blank');
+    });
+
+    // Form submit handler untuk upload dokumen yang sudah ditandatangani
+    $('#uploadSignedDocForm').submit(function(e) {
+        e.preventDefault();
+        
+        var layananId = $('#layanan_id').val();
+        var formData = new FormData(this);
+        
+        $.ajax({
+            url: "{{ route('layanan.daftar.upload-signed-document', ['id' => ':id']) }}".replace(':id', layananId),
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function() {
+                $('#uploadSignedDocForm button[type="submit"]').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Uploading...');
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#uploadSignedDocModal').modal('hide');
+                    
+                    // Pesan sukses berdasarkan action
+                    var modalTitle = $('#uploadSignedDocModalLabel').text();
+                    var successMessage = modalTitle.includes('Ganti') ? 
+                        'Dokumen berhasil diganti!' : 
+                        'Dokumen berhasil diupload!';
+                    
+                    swal("Berhasil!", successMessage, "success");
+                    loadDaftarLayanan();
+                    $('#uploadSignedDocForm')[0].reset();
+                } else {
+                    swal("Error!", response.message, "error");
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = 'Terjadi kesalahan saat upload dokumen.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                swal("Error!", errorMsg, "error");
+            },
+            complete: function() {
+                $('#uploadSignedDocForm button[type="submit"]').prop('disabled', false).html('<i class="fa fa-upload"></i> Upload Dokumen');
+            }
+        });
+    });
+
+    // Reset form ketika modal ditutup
+    $('#uploadSignedDocModal').on('hidden.bs.modal', function () {
+        $('#uploadSignedDocForm')[0].reset();
+        // Reset modal ke keadaan semula (upload)
+        $('#uploadSignedDocModalLabel').html('<i class="fa fa-upload"></i> Upload Dokumen yang Sudah Ditandatangani');
+        $('#uploadSignedDocModal .modal-header').removeClass('bg-warning').addClass('bg-success');
+        $('#uploadSignedDocModal .alert-info').html('<i class="fa fa-info-circle"></i> Upload dokumen yang sudah ditandatangani oleh Kepala Desa agar bisa didownload oleh user melalui aplikasi mobile.');
+        $('#uploadSignedDocModal .btn-success').html('<i class="fa fa-upload"></i> Upload Dokumen');
     });
 });
 

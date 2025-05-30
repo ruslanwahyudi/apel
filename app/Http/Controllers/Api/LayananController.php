@@ -28,7 +28,8 @@ class LayananController extends Controller
             $user = User::findOrFail($userId);
 
             // Query dasar dengan relasi
-            $query = Pelayanan::with(['jenisPelayanan', 'dataIdentitas', 'dokumenPengajuan', 'statusLayanan', 'surat']);
+            $query = Pelayanan::with(['jenisPelayanan', 'dataIdentitas', 'dokumenPengajuan', 'statusLayanan', 'surat'])
+                ->select('*'); // Pastikan semua kolom termasuk signed_document_path diambil
 
             // Filter berdasarkan role
             if ($user->role === 'user') {
@@ -800,5 +801,51 @@ class LayananController extends Controller
             'message' => 'List Jenis Layanan',
             'data' => $jenisLayanan
         ]);
+    }
+
+    /**
+     * Download dokumen yang sudah ditandatangani untuk user Android
+     */
+    public function downloadSignedDocument($id)
+    {
+        try {
+            $pelayanan = Pelayanan::with('jenisPelayanan')->findOrFail($id);
+
+            // Cek apakah user berhak download (hanya user yang mengajukan atau admin)
+            $user = auth()->user();
+            if ($user->role !== 'admin' && $pelayanan->user_id !== $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak berhak mengakses dokumen ini'
+                ], 403);
+            }
+
+            if (!$pelayanan->signed_document_path || !\Storage::disk('public')->exists($pelayanan->signed_document_path)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Dokumen yang sudah ditandatangani tidak ditemukan'
+                ], 404);
+            }
+
+            // Return URL download
+            $downloadUrl = url('/storage/' . $pelayanan->signed_document_path);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Link download dokumen yang sudah ditandatangani',
+                'data' => [
+                    'download_url' => $downloadUrl,
+                    'file_name' => 'Dokumen_Ditandatangani_' . $pelayanan->jenisPelayanan->nama_pelayanan . '_' . $pelayanan->id . '.' . pathinfo($pelayanan->signed_document_path, PATHINFO_EXTENSION),
+                    'layanan_id' => $pelayanan->id,
+                    'jenis_layanan' => $pelayanan->jenisPelayanan->nama_pelayanan
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 } 

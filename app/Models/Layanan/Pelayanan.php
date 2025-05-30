@@ -17,7 +17,8 @@ class Pelayanan extends Model
         'user_id',
         'jenis_pelayanan_id',
         'catatan',
-        'status_layanan'
+        'status_layanan',
+        'signed_document_path'
     ];
 
     /**

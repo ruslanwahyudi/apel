@@ -124,6 +124,13 @@
                         <label for="nama_field">Nama Field <span class="text-danger">*</span></label>
                         <input type="hidden" name="id" id="id">
                         <input type="text" class="form-control" id="nama_field" name="nama_field" required>
+                        <small class="form-text text-muted">Nama field untuk database/pemrosesan (contoh: nama_lengkap, tempat_lahir)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="label">Label <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="label" name="label" required>
+                        <small class="form-text text-muted">Label yang ditampilkan kepada user (contoh: Nama Lengkap, Tempat Lahir)</small>
                     </div>
 
                     <div class="form-group">
@@ -147,6 +154,14 @@
                             <input type="checkbox" class="custom-control-input" id="required" name="required" value="1">
                             <label class="custom-control-label" for="required">Required</label>
                         </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="readonly" name="readonly" value="1">
+                            <label class="custom-control-label" for="readonly">Readonly (Diisi oleh Admin)</label>
+                        </div>
+                        <small class="form-text text-muted">Jika dicentang, field ini akan readonly di aplikasi mobile dan hanya bisa diisi oleh admin</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -179,10 +194,17 @@
                             <label for="deskripsi">Deskripsi</label>
                             <textarea class="form-control" id="deskripsi" name="deskripsi" rows="3"></textarea>
                         </div>
+                        
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="required_dokumen" name="required" value="1" checked>
+                                <label class="custom-control-label" for="required_dokumen">Dokumen Wajib</label>
+                            </div>
+                            <small class="form-text text-muted">Centang jika dokumen ini wajib diunggah</small>
+                        </div>
+                        
                         <input type="hidden" name="id" id="id">
-                        <input type="hidden" id="required" name="required" value="1">
                         <input type="hidden" id="jenis_pelayanan_id" name="jenis_pelayanan_id">
-
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
@@ -307,7 +329,9 @@ $(document).ready(function() {
                                                                 ${items.map(identitas_pemohon => `<li>
                                                                     <button class="btn btn-danger btn-sm delete-identitas" data-id="${identitas_pemohon.id}"><i class="fa fa-trash"></i></button>
                                                                     <button class="btn btn-primary btn-sm edit-identitas" data-id="${identitas_pemohon.id}"><i class="fa fa-edit"></i></button>
-                                                                    ${identitas_pemohon.nama_field} (${identitas_pemohon.required ? 'Wajib' : 'Tidak Wajib'})
+                                                                    ${identitas_pemohon.label || identitas_pemohon.nama_field} ${identitas_pemohon.label ? `<small class="text-muted">(${identitas_pemohon.nama_field})</small>` : ''}
+                                                                    <span class="badge ${identitas_pemohon.required ? 'badge-danger' : 'badge-secondary'}">${identitas_pemohon.required ? 'Wajib' : 'Tidak Wajib'}</span>
+                                                                    <span class="badge ${identitas_pemohon.readonly ? 'badge-warning' : 'badge-info'}">${identitas_pemohon.readonly ? 'Readonly' : 'Editable'}</span>
                                                                 </li>`).join('')}
                                                                 </ul>
                                                             </div>
@@ -322,7 +346,9 @@ $(document).ready(function() {
                                                                 ${items.map(identitas_pemohon => `<li>
                                                                     <button class="btn btn-danger btn-sm delete-identitas" data-id="${identitas_pemohon.id}"><i class="fa fa-trash"></i></button>
                                                                     <button class="btn btn-primary btn-sm edit-identitas" data-id="${identitas_pemohon.id}"><i class="fa fa-edit"></i></button>
-                                                                    ${identitas_pemohon.nama_field} (${identitas_pemohon.required ? 'Wajib' : 'Tidak Wajib'})
+                                                                    ${identitas_pemohon.label || identitas_pemohon.nama_field} ${identitas_pemohon.label ? `<small class="text-muted">(${identitas_pemohon.nama_field})</small>` : ''}
+                                                                    <span class="badge ${identitas_pemohon.required ? 'badge-danger' : 'badge-secondary'}">${identitas_pemohon.required ? 'Wajib' : 'Tidak Wajib'}</span>
+                                                                    <span class="badge ${identitas_pemohon.readonly ? 'badge-warning' : 'badge-info'}">${identitas_pemohon.readonly ? 'Readonly' : 'Editable'}</span>
                                                                 </li>`).join('')}
                                                                 </ul>
                                                             </div>
@@ -371,7 +397,29 @@ $(document).ready(function() {
     // Show modal when add-identitas button is clicked
     $(document).on('click', '.add-identitas', function() {
         var jenisId = $(this).data('id');
+        
+        // Reset form completely
+        $('#identitasForm')[0].reset();
+        
+        // Clear all hidden fields
+        $('#identitasForm').find('input[name="id"]').val('');
+        
+        // Set jenis_pelayanan_id for new record
         $('#identitasForm').find('#jenis_pelayanan_id').val(jenisId);
+        
+        // Reset select fields to default
+        $('#identitasForm').find('#klasifikasi_id').val('');
+        $('#identitasForm').find('#tipe_field').val('');
+        
+        // Uncheck required checkbox
+        $('#identitasForm').find('#required').prop('checked', false);
+        
+        // Uncheck readonly checkbox
+        $('#identitasForm').find('#readonly').prop('checked', false);
+        
+        // Change modal title to indicate adding new
+        $('#identitasModalLabel').text('Tambah Identitas');
+        
         $('#identitasModal').modal('show');
     });
 
@@ -461,6 +509,9 @@ $(document).ready(function() {
         // Reset form sebelum memuat data baru
         $('#identitasForm')[0].reset();
         
+        // Change modal title to indicate editing
+        $('#identitasModalLabel').text('Edit Identitas');
+        
         // Tampilkan loading indicator
         $('#identitasModal .modal-body').append('<div id="loading-indicator" class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div></div>');
         
@@ -476,6 +527,7 @@ $(document).ready(function() {
                 // Isi form dengan data yang diterima
                 $('#identitasForm').find('input[name="jenis_pelayanan_id"]').val(response.jenis_pelayanan_id);
                 $('#identitasForm').find('input[name="nama_field"]').val(response.nama_field);
+                $('#identitasForm').find('input[name="label"]').val(response.label);
                 $('#identitasForm').find('select[name="tipe_field"]').val(response.tipe_field);
                 
                 // Tangani klasifikasi_id dengan lebih baik
@@ -504,6 +556,7 @@ $(document).ready(function() {
                 }, 100);
                 
                 $('#identitasForm').find('input[name="required"]').prop('checked', response.required);
+                $('#identitasForm').find('input[name="readonly"]').prop('checked', response.readonly);
                 $('#identitasForm').find('input[name="id"]').val(response.id);
             },
             error: function(xhr) {
@@ -521,13 +574,28 @@ $(document).ready(function() {
     // Show modal when add-syarat-dokumen button is clicked
     $(document).on('click', '.add-syarat-dokumen', function() {
         var jenisId = $(this).data('id');
-        $('#syaratDokumenForm').find('#jenis_pelayanan_id').val(jenisId);  
+        
+        // Reset form completely
+        $('#syaratDokumenForm')[0].reset();
+        
+        // Set jenis_pelayanan_id for new record
+        $('#syaratDokumenForm').find('#jenis_pelayanan_id').val(jenisId);
+        
+        // Set default required checkbox to checked
+        $('#syaratDokumenForm').find('#required_dokumen').prop('checked', true);
+        
+        // Clear hidden id field
+        $('#syaratDokumenForm').find('input[name="id"]').val('');
+        
         $('#syaratDokumenModal').modal('show');
     });
 
     $(document).on('click', '.edit-syarat-dokumen', function() {
         
         var syaratDokumenId = $(this).data('id');
+        
+        // Change modal title to indicate editing
+        $('#syaratDokumenModalLabel').text('Edit Syarat Dokumen');
         
         $.ajax({
             url: "{{ route('layanan.syarat_dokumen.show', ['persyaratan' => ':persyaratanId']) }}".replace(':persyaratanId', syaratDokumenId),
@@ -579,6 +647,19 @@ $(document).ready(function() {
     // Form submit handler for Syarat Dokumen
     $('#syaratDokumenForm').submit(function(e) {
         e.preventDefault();
+        
+        // Explicitly handle required checkbox
+        let isRequiredDokumen = $('#syaratDokumenForm').find('input[name="required"]').is(':checked') ? 1 : 0;
+        
+        // Create a FormData object for more control
+        let formData = new FormData(this);
+        
+        // Set required value explicitly
+        formData.set('required', isRequiredDokumen);
+        
+        // Convert FormData to URL-encoded string for ajax
+        let formParams = new URLSearchParams(formData).toString();
+        
         let url = '';
         let method = '';
         if ($('#syaratDokumenForm').find('input[name="id"]').val() == '') {
@@ -592,7 +673,7 @@ $(document).ready(function() {
         $.ajax({
             url: url,
             method: method,
-            data: $(this).serialize(),
+            data: formParams,
             success: function(response) {
                 $('#syaratDokumenModal').modal('hide');
                 swal("Berhasil!", response.message, "success");
@@ -612,11 +693,17 @@ $(document).ready(function() {
         // Explicitly handle required checkbox
         let isRequired = $('#identitasForm').find('input[name="required"]').is(':checked') ? 1 : 0;
         
+        // Explicitly handle readonly checkbox
+        let isReadonly = $('#identitasForm').find('input[name="readonly"]').is(':checked') ? 1 : 0;
+        
         // Create a FormData object for more control
         let formData = new FormData(this);
         
         // Set required value explicitly
         formData.set('required', isRequired);
+        
+        // Set readonly value explicitly
+        formData.set('readonly', isReadonly);
         
         // Convert FormData to URL-encoded string for ajax
         let formParams = new URLSearchParams(formData).toString();
@@ -629,8 +716,10 @@ $(document).ready(function() {
             jenis_pelayanan_id: $('#identitasForm').find('input[name="jenis_pelayanan_id"]').val(),
             klasifikasi_id: $('#identitasForm').find('select[name="klasifikasi_id"]').val(),
             nama_field: $('#identitasForm').find('input[name="nama_field"]').val(),
+            label: $('#identitasForm').find('input[name="label"]').val(),
             tipe_field: $('#identitasForm').find('select[name="tipe_field"]').val(),
-            required: isRequired
+            required: isRequired,
+            readonly: isReadonly
         };
         console.log('Debug form values:', debugData);
         
@@ -787,6 +876,49 @@ $(document).ready(function() {
                 });
             }
         });
+    });
+
+    // Clean form when modal is closed
+    $('#identitasModal').on('hidden.bs.modal', function () {
+        // Reset form completely
+        $('#identitasForm')[0].reset();
+        
+        // Clear all hidden fields
+        $('#identitasForm').find('input[name="id"]').val('');
+        $('#identitasForm').find('input[name="jenis_pelayanan_id"]').val('');
+        
+        // Reset select fields to default
+        $('#identitasForm').find('#klasifikasi_id').val('');
+        $('#identitasForm').find('#tipe_field').val('');
+        
+        // Uncheck required checkbox
+        $('#identitasForm').find('#required').prop('checked', false);
+        
+        // Uncheck readonly checkbox
+        $('#identitasForm').find('#readonly').prop('checked', false);
+        
+        // Remove any loading indicators if still present
+        $('#loading-indicator').remove();
+        $('#submit-loading').remove();
+        
+        // Reset modal title
+        $('#identitasModalLabel').text('Tambah Identitas');
+    });
+
+    // Clean form when syarat dokumen modal is closed
+    $('#syaratDokumenModal').on('hidden.bs.modal', function () {
+        // Reset form completely
+        $('#syaratDokumenForm')[0].reset();
+        
+        // Clear all hidden fields
+        $('#syaratDokumenForm').find('input[name="id"]').val('');
+        $('#syaratDokumenForm').find('input[name="jenis_pelayanan_id"]').val('');
+        
+        // Set default required checkbox to checked
+        $('#syaratDokumenForm').find('#required_dokumen').prop('checked', true);
+        
+        // Reset modal title
+        $('#syaratDokumenModalLabel').text('Tambah Syarat Dokumen');
     });
 });
 </script>

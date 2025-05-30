@@ -122,12 +122,59 @@ class KategoriSurat extends Model
             ]);
         }
 
+        // Ambil data bukti kepemilikan dari duk_dokumen_pengajuan
+        $buktiKepemilikan = $this->getBuktiKepemilikan($pemohonId);
+        if (!empty($buktiKepemilikan)) {
+            $variables['bukti_kepemilikan'] = $buktiKepemilikan;
+        }
+
         \Log::info('Final DUK variables', [
             'pemohon_id' => $pemohonId,
             'variables' => $variables
         ]);
 
         return $variables;
+    }
+
+    // Method untuk mendapatkan bukti kepemilikan dari dokumen pengajuan
+    private function getBuktiKepemilikan($pemohonId)
+    {
+        \Log::info('Getting bukti kepemilikan for pemohon', [
+            'pemohon_id' => $pemohonId
+        ]);
+
+        // Ambil semua dokumen yang diupload untuk pelayanan ini
+        $dokumenPengajuan = \DB::table('duk_dokumen_pengajuan as ddp')
+            ->join('duk_syarat_dokumen as dsd', 'ddp.syarat_dokumen_id', '=', 'dsd.id')
+            ->where('ddp.pelayanan_id', $pemohonId)
+            ->whereNotNull('ddp.path_dokumen')
+            ->select('dsd.nama_dokumen')
+            ->get();
+
+        \Log::info('Dokumen pengajuan query result', [
+            'pemohon_id' => $pemohonId,
+            'dokumen_count' => $dokumenPengajuan->count(),
+            'dokumen_list' => $dokumenPengajuan->pluck('nama_dokumen')->toArray()
+        ]);
+
+        // Format nama dokumen menjadi string
+        if ($dokumenPengajuan->count() > 0) {
+            $namaList = $dokumenPengajuan->pluck('nama_dokumen')->toArray();
+            $buktiKepemilikan = implode(', ', $namaList);
+            
+            \Log::info('Bukti kepemilikan generated', [
+                'pemohon_id' => $pemohonId,
+                'bukti_kepemilikan' => $buktiKepemilikan
+            ]);
+            
+            return $buktiKepemilikan;
+        }
+
+        \Log::info('No bukti kepemilikan found', [
+            'pemohon_id' => $pemohonId
+        ]);
+
+        return '';
     }
 
     // Method untuk mendapatkan variables default (untuk surat non-layanan)

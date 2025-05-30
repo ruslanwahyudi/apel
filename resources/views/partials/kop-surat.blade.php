@@ -33,7 +33,7 @@
     }
     
     .header-title {
-        font-size: 16px;
+        font-size: 26px;
         font-weight: bold;
         line-height: 1.2;
         margin: 0;
@@ -41,7 +41,7 @@
     }
     
     .header-subtitle {
-        font-size: 14px;
+        font-size: 20px;
         font-weight: bold;
         margin: 2px 0;
         text-transform: uppercase;

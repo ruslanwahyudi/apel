@@ -32,6 +32,7 @@ class DaftarLayananController extends Controller
                 'dokumenPengajuan.syaratDokumen',
                 'status'
             ])
+            ->select('*') // Pastikan semua kolom termasuk signed_document_path diambil
             ->orderBy('id', 'desc')
             ->get();
 
@@ -79,7 +80,8 @@ class DaftarLayananController extends Controller
                             'id' => $field->id,
                             'nama_field' => $field->nama_field,
                             'tipe_field' => $field->tipe_field,
-                            'required' => $field->required
+                            'required' => $field->required,
+                            'readonly' => $field->readonly
                         ];
                     })->toArray()
                 ];
@@ -584,6 +586,97 @@ class DaftarLayananController extends Controller
                 'success' => false,
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Upload dokumen yang sudah ditandatangani
+     */
+    public function uploadSignedDocument(Request $request, $id)
+    {
+        $request->validate([
+            'signed_document' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240' // 10MB max
+        ]);
+
+        try {
+            $pelayanan = \App\Models\Layanan\Pelayanan::findOrFail($id);
+
+            // Pastikan layanan sudah ditandatangani (status Selesai atau yang sesuai)
+            if ($pelayanan->status_layanan != 8) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Dokumen hanya bisa diupload untuk layanan yang sudah selesai (status = 8)'
+                ], 400);
+            }
+
+            // Hapus dokumen lama jika ada
+            if ($pelayanan->signed_document_path && \Storage::disk('public')->exists($pelayanan->signed_document_path)) {
+                \Storage::disk('public')->delete($pelayanan->signed_document_path);
+            }
+
+            // Upload dokumen baru
+            $file = $request->file('signed_document');
+            $fileName = 'signed-doc-' . $pelayanan->id . '-' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('layanan/signed-documents', $fileName, 'public');
+
+            // Update path di database
+            $pelayanan->update(['signed_document_path' => $path]);
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Dokumen yang sudah ditandatangani berhasil diupload!'
+                ]);
+            }
+
+            return redirect()->route('layanan.daftar')
+                ->with('success', 'Dokumen yang sudah ditandatangani berhasil diupload!');
+
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download dokumen yang sudah ditandatangani
+     */
+    public function downloadSignedDocument($id)
+    {
+        try {
+            $pelayanan = \App\Models\Layanan\Pelayanan::findOrFail($id);
+
+            if (!$pelayanan->signed_document_path || !\Storage::disk('public')->exists($pelayanan->signed_document_path)) {
+                if (request()->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Dokumen yang sudah ditandatangani tidak ditemukan'
+                    ], 404);
+                }
+                
+                return redirect()->back()->with('error', 'Dokumen yang sudah ditandatangani tidak ditemukan');
+            }
+
+            $filePath = storage_path('app/public/' . $pelayanan->signed_document_path);
+            $fileName = 'Dokumen_Ditandatangani_' . $pelayanan->jenisPelayanan->nama_pelayanan . '_' . $pelayanan->id . '.' . pathinfo($filePath, PATHINFO_EXTENSION);
+
+            return response()->download($filePath, $fileName);
+
+        } catch (\Exception $e) {
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 } 
