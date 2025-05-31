@@ -347,6 +347,7 @@ Route::middleware(['auth', 'role:admin,kepala'])->group(function () {
     Route::delete('layanan/daftar-layanan/destroy/{daftar}', [DaftarLayananController::class, 'destroy'])->name('layanan.daftar.destroy');
     Route::get('layanan/daftar-layanan/search/{search}', [DaftarLayananController::class, 'search'])->name('layanan.daftar.search');
     Route::post('layanan/daftar-layanan/approve/{id}', [DaftarLayananController::class, 'approve'])->name('layanan.approve');
+    Route::post('layanan/daftar-layanan/simple-approve/{id}', [DaftarLayananController::class, 'simpleApprove'])->name('layanan.simple-approve');
     Route::post('layanan/daftar-layanan/upload-signed-document/{id}', [DaftarLayananController::class, 'uploadSignedDocument'])->name('layanan.daftar.upload-signed-document');
     Route::get('layanan/daftar-layanan/download-signed-document/{id}', [DaftarLayananController::class, 'downloadSignedDocument'])->name('layanan.daftar.download-signed-document');
 
@@ -535,6 +536,41 @@ Route::get('/api/pemohon/{id}', function($id) {
 
 // Test route for debugging pelayanan data
 Route::get('/test-pelayanan/{id}', [\App\Http\Controllers\TestController::class, 'testPelayananData']);
+
+// Test route untuk surat keterangan domisili (sementara untuk development)
+Route::get('/test-surat-domisili', function () {
+    return view('test-surat-domisili');
+})->name('test.surat.domisili');
+
+// Test route untuk surat keterangan ahli waris (sementara untuk development)
+Route::get('/test-surat-ahli-waris', function () {
+    return view('test-surat-ahli-waris');
+})->name('test.surat.ahli-waris');
+
+// Test route untuk surat keterangan kematian (sementara untuk development)
+Route::get('/test-surat-kematian', function () {
+    return view('test-surat-kematian');
+})->name('test.surat.kematian');
+
+// Test route untuk surat keterangan kelakuan baik (sementara untuk development)
+Route::get('/test-surat-kelakuan-baik', function () {
+    return view('test-surat-kelakuan-baik');
+})->name('test.surat.kelakuan-baik');
+
+// Test route untuk surat keterangan kehilangan (sementara untuk development)
+Route::get('/test-surat-kehilangan', function () {
+    return view('test-surat-kehilangan');
+})->name('test.surat.kehilangan');
+
+// Test route untuk TTE dan footer elektronik update (sementara untuk development)
+Route::get('/test-tte-update', function () {
+    return view('test-tte-update');
+})->name('test.tte.update');
+
+// Test route untuk multiple pages footer
+Route::get('/test-multiple-pages', function () {
+    return view('test-multiple-pages');
+});
 
 
 

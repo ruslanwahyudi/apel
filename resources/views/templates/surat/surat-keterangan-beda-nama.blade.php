@@ -5,14 +5,14 @@
     <title>Surat Keterangan Beda Nama</title>
     <style>
         @page {
-            margin: 1.5cm 2cm 2cm 2cm;
+            margin: 1.5cm 1.5cm 2cm 1.5cm;
             size: A4;
         }
         
         body {
             font-family: 'Times New Roman', serif;
             font-size: 12pt;
-            line-height: 1.5;
+            line-height: 1;
             color: #000;
             margin: 0;
             padding: 0;
@@ -26,10 +26,10 @@
         .judul-surat {
             text-align: center;
             font-weight: bold;
-            font-size: 14pt;
+            font-size: 12pt;
             margin: 20px 0 15px 0;
             text-decoration: underline;
-            text-transform: uppercase;
+            /* text-transform: uppercase; */
         }
         
         .nomor-surat {
@@ -119,6 +119,20 @@
         
         .penutup-section {
             margin: 20px 0;
+        }
+        /* Fallback footer jika @page tidak bekerja */
+        .footer-fallback {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 7pt;
+            color: #666;
+            background: white;
+            border-top: 1px solid #ccc;
+            padding: 3px;
+            margin: 0;
         }
         
         @media print {
@@ -253,6 +267,10 @@
             'marginBottom' => '30px',
             'spacingTtd' => '120px'
         ])
+    </div>
+    {{-- Fallback Footer --}}
+    <div class="footer-fallback">
+        <strong>Dokumen ini telah ditandatangani secara elektronik</strong> | menggunakan sertifikat elektronik BSrE, Badan Siber dan Sandi Negara
     </div>
 </body>
 </html> 

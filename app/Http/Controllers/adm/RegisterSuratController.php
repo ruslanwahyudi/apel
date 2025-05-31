@@ -5,6 +5,7 @@ namespace App\Http\Controllers\adm;
 use App\Http\Controllers\Controller;
 use App\Models\adm\RegisterSurat;
 use App\Models\adm\KategoriSurat;
+use App\Models\Layanan\Pelayanan;
 use App\Models\LogTransaksi;
 use App\Models\MasterOption;
 use App\Models\Notifications;
@@ -165,8 +166,12 @@ class RegisterSuratController extends Controller
         $layanan = $surat->layanan;
         \Log::info('Layanan: ' . $layanan);
         $jenis_surat = $surat->jenis_surat;
+        \Log::info('Jenis Surat: ' . $jenis_surat);
+        $kategori_surat = $surat->kategori_surat;
+        \Log::info('Kategori Surat: ' . $kategori_surat);
         // Kirim notifikasi ke user
         $user = User::find($layanan->user_id);
+        \Log::info('User: ' . $user);
         // Kirim notifikasi ke user
         try {
             $notification = Notifications::create([
@@ -177,6 +182,7 @@ class RegisterSuratController extends Controller
             ]);
 
             $user = User::find($layanan->user_id);
+            \Log::info('User 2: ' . $user);
             
             if ($user && $user->fcm_token) {
                 // Generate access token
@@ -276,21 +282,158 @@ class RegisterSuratController extends Controller
 
     public function print(RegisterSurat $surat)
     {
-        // $pdf = Pdf::loadView('adm.register_surat.print', compact('surat'))
-        //     ->setPaper('a4')
-        //     ->setWarnings(false)
-        //     ->setOptions([
-        //         'isHtml5ParserEnabled' => true,
-        //         'isRemoteEnabled' => true,
-        //         'defaultFont' => 'sans-serif'
-        //     ]);
+        try {
+            // Load kategori surat dengan relasi
+            $surat->load([
+                'kategori_surat', 
+                'signer',
+                'layanan.user',
+                'layanan.jenisPelayanan', 
+                'layanan.dataIdentitas.identitasPemohon'
+            ]);
 
-        // return $pdf->stream('surat-' . $surat->nomor_surat . '.pdf');
+            $kategoriSurat = $surat->kategori_surat;
+            
+            // Cek apakah kategori surat memiliki template blade
+            if ($kategoriSurat && $kategoriSurat->hasBladeTemplate()) {
+                // Gunakan template blade dari kategori surat
+                $templatePath = $kategoriSurat->getBladeTemplatePath();
+                
+                // Siapkan data template - menggunakan logika yang sama dengan KategoriSuratController
+                $templateData = [
+                    'kategori' => $kategoriSurat,
+                    'generated_at' => now(),
+                    'nomor_surat' => $surat->nomor_surat
+                ];
 
-        $pdf = PDF::loadView('adm.register_surat.print', [
-            'surat' => $surat
-        ])->setPaper('a4', 'portrait');
+                // Jika ini adalah surat layanan, ambil data dari layanan
+                if ($kategoriSurat->isLayanan() && $surat->layanan) {
+                    // Gunakan method getVariables dari kategori surat seperti di KategoriSuratController
+                    $dukVariables = $kategoriSurat->getVariables($surat->layanan->id);
+                    
+                    // Merge dengan data form (dalam hal ini dari register surat)
+                    $formData = [
+                        'nomor_surat' => $surat->nomor_surat,
+                        'tanggal_surat' => $surat->tanggal_surat ? $surat->tanggal_surat->format('d F Y') : '',
+                        'perihal' => $surat->perihal,
+                        'isi_surat' => $surat->isi_surat,
+                        'tujuan' => $surat->tujuan,
+                        'pengirim' => $surat->pengirim,
+                        'signer_name' => $surat->signer->name ?? '',
+                        'signer_role' => $surat->signer->role ?? '',
+                        'tanggal' => $surat->tanggal_surat ? $surat->tanggal_surat->format('Y-m-d') : now()->format('Y-m-d')
+                    ];
+                    
+                    $mergedData = array_merge($dukVariables, $formData);
+                    $templateData['data'] = $mergedData;
+                    
+                    \Log::info('Register Surat PDF: Using DUK data for layanan surat', [
+                        'kategori_id' => $kategoriSurat->id,
+                        'surat_id' => $surat->id,
+                        'layanan_id' => $surat->layanan->id,
+                        'duk_variables_count' => count($dukVariables),
+                        'form_data_count' => count($formData),
+                        'merged_data_count' => count($mergedData),
+                        'merged_keys' => array_keys($mergedData)
+                    ]);
+                } else {
+                    // Untuk surat non-layanan, gunakan data dari surat langsung
+                    $templateData['data'] = [
+                        'nomor_surat' => $surat->nomor_surat,
+                        'tanggal_surat' => $surat->tanggal_surat ? $surat->tanggal_surat->format('d F Y') : '',
+                        'perihal' => $surat->perihal,
+                        'isi_surat' => $surat->isi_surat,
+                        'tujuan' => $surat->tujuan,
+                        'pengirim' => $surat->pengirim,
+                        'signer_name' => $surat->signer->name ?? '',
+                        'signer_role' => $surat->signer->role ?? '',
+                        'tanggal' => $surat->tanggal_surat ? $surat->tanggal_surat->format('Y-m-d') : now()->format('Y-m-d')
+                    ];
+                    
+                    \Log::info('Register Surat PDF: Using manual data for non-layanan surat', [
+                        'kategori_id' => $kategoriSurat->id,
+                        'surat_id' => $surat->id,
+                        'manual_data_count' => count($templateData['data'])
+                    ]);
+                }
 
-        return $pdf->stream('Surat_' . $surat->perihal . '.pdf');
+                \Log::info('Print surat using blade template:', [
+                    'surat_id' => $surat->id,
+                    'template_path' => $templatePath,
+                    'kategori_surat' => $kategoriSurat->nama,
+                    'is_layanan' => $kategoriSurat->isLayanan(),
+                    'has_layanan_data' => $surat->layanan ? true : false,
+                    'template_data_keys' => array_keys($templateData['data'] ?? [])
+                ]);
+
+                // Generate HTML dari Blade template
+                $html = view($templatePath, $templateData)->render();
+                
+                \Log::info('Register Surat PDF: HTML generated successfully', [
+                    'surat_id' => $surat->id,
+                    'html_length' => strlen($html),
+                    'template_path' => $templatePath
+                ]);
+
+                // Generate PDF menggunakan DomPDF dengan setting yang sama seperti di KategoriSuratController
+                $pdf = Pdf::loadHTML($html)
+                    ->setPaper('a4', 'portrait')
+                    ->setOptions([
+                        'defaultFont' => 'Times-Roman',
+                        'isRemoteEnabled' => true,
+                        'isHtml5ParserEnabled' => true,
+                        'dpi' => 150,
+                        'defaultPaperSize' => 'a4',
+                        'chroot' => public_path(),
+                        'debugKeepTemp' => false,
+                        'debugCss' => false,
+                        'debugLayout' => false,
+                        'debugLayoutLines' => false,
+                        'debugLayoutBlocks' => false,
+                        'debugLayoutInline' => false,
+                        'debugLayoutPaddingBox' => false
+                    ]);
+
+                $filename = 'Surat_' . $surat->nomor_surat . '_' . now()->format('YmdHis') . '.pdf';
+                
+                // Return PDF sebagai stream untuk preview di browser
+                $pdfOutput = $pdf->output();
+                return response($pdfOutput)
+                    ->header('Content-Type', 'application/pdf')
+                    ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
+                    ->header('Content-Length', strlen($pdfOutput))
+                    ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                    ->header('Pragma', 'no-cache')
+                    ->header('Expires', '0');
+                
+            } else {
+                \Log::info('Using default print template:', [
+                    'surat_id' => $surat->id,
+                    'kategori_surat' => $kategoriSurat ? $kategoriSurat->nama : 'No kategori',
+                    'has_blade_template' => $kategoriSurat ? $kategoriSurat->hasBladeTemplate() : false
+                ]);
+                
+                // Fallback ke template default jika tidak ada template blade
+                $pdf = PDF::loadView('adm.register_surat.print', [
+                    'surat' => $surat
+                ])->setPaper('a4', 'portrait');
+
+                return $pdf->stream('Surat_' . $surat->perihal . '.pdf');
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Error in print surat:', [
+                'surat_id' => $surat->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Fallback ke template default jika terjadi error
+            $pdf = PDF::loadView('adm.register_surat.print', [
+                'surat' => $surat
+            ])->setPaper('a4', 'portrait');
+
+            return $pdf->stream('Surat_' . $surat->perihal . '.pdf');
+        }
     }
 } 

@@ -285,6 +285,11 @@ $(document).ready(function() {
                                             <i class="fa fa-check"></i> Approve
                                         </button>` : ''
                                     }
+                                    @if(auth()->id() === 3)
+                                    <button class="btn btn-primary btn-sm admin-approve-layanan mb-1" data-id="${layanan.id}" title="Admin Approve (+1 Status)">
+                                        <i class="fa fa-arrow-up"></i> Admin Approve
+                                    </button>
+                                    @endif
                                     ${layanan.status_layanan == 8 && !layanan.signed_document_path ? 
                                         `<button class="btn btn-warning btn-sm upload-signed-doc mb-1" data-id="${layanan.id}" title="Upload Dokumen Ditandatangani">
                                             <i class="fa fa-upload"></i> Upload Dokumen
@@ -470,6 +475,66 @@ $(document).ready(function() {
                     },
                     error: function(xhr) {
                         swal("Error!", "Terjadi kesalahan saat menyetujui layanan.", "error");
+                    }
+                });
+            }
+        });
+    });
+
+    // Tambahkan handler untuk admin approve (increment status +1)
+    $('#data-table-body').on('click', '.admin-approve-layanan', function() {
+        var layananId = $(this).data('id');
+        swal({
+            title: "Admin Approve",
+            text: "Status layanan akan dinaikkan +1. Apakah Anda yakin?",
+            icon: "info",
+            buttons: {
+                cancel: {
+                    text: "Batal",
+                    value: null,
+                    visible: true,
+                    className: "",
+                    closeModal: true,
+                },
+                confirm: {
+                    text: "Ya, Naikkan Status",
+                    value: true,
+                    visible: true,
+                    className: "btn-primary",
+                    closeModal: true
+                }
+            },
+            dangerMode: false,
+        })
+        .then((willApprove) => {
+            if (willApprove) {
+                $.ajax({
+                    url: "{{ route('layanan.simple-approve', ['id' => ':id']) }}".replace(':id', layananId),
+                    method: 'POST',
+                    beforeSend: function() {
+                        swal({
+                            title: "Processing...",
+                            text: "Sedang memproses permintaan...",
+                            icon: "info",
+                            buttons: false,
+                            closeOnClickOutside: false,
+                            closeOnEsc: false
+                        });
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            swal("Berhasil!", response.message, "success");
+                            loadDaftarLayanan();
+                        } else {
+                            swal("Error!", response.message, "error");
+                        }
+                    },
+                    error: function(xhr) {
+                        var errorMessage = "Terjadi kesalahan saat memproses request.";
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        swal("Error!", errorMessage, "error");
                     }
                 });
             }

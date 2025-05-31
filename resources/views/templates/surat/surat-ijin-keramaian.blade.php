@@ -5,14 +5,14 @@
     <title>Surat Ijin Keramaian</title>
     <style>
         @page {
-            margin: 1.5cm 2cm 2cm 2cm;
+            margin: 0.5cm 1.5cm 1.5cm 1.5cm;
             size: A4;
         }
         
         body {
             font-family: 'Times New Roman', serif;
             font-size: 12pt;
-            line-height: 1.5;
+            line-height: 1;
             color: #000;
             margin: 0;
             padding: 0;
@@ -25,7 +25,7 @@
         
         .header-info {
             margin: 8px 0 15px 0;
-            font-size: 11pt;
+            font-size: 10pt;
             display: table;
             width: 100%;
         }
@@ -51,16 +51,16 @@
         .judul-surat {
             text-align: center;
             font-weight: bold;
-            font-size: 14pt;
-            margin: 20px 0 10px 0;
+            font-size: 12pt;
+            margin: 10px 0 10px 0;
             text-decoration: underline;
-            text-transform: uppercase;
+            /* text-transform: uppercase; */
         }
         
         .isi-surat {
             text-align: justify;
             margin: 15px 0;
-            line-height: 1.8;
+            line-height: 1.4;
         }
         
         .isi-surat p {
@@ -103,7 +103,7 @@
         
         .peraturan-section ol li {
             margin: 5px 0;
-            line-height: 1.5;
+            line-height: 1.4;
         }
         
         .syarat-section {
@@ -117,7 +117,7 @@
         
         .syarat-section ul li {
             margin: 5px 0;
-            line-height: 1.5;
+            line-height: 1.4;
         }
         
         .penutup-section {
@@ -129,6 +129,21 @@
             line-height: 1.4;
         }
         
+        /* Fallback footer jika @page tidak bekerja */
+        .footer-fallback {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 7pt;
+            color: #666;
+            background: white;
+            border-top: 1px solid #ccc;
+            padding: 3px;
+            margin: 0;
+        }
+
         @media print {
             body {
                 padding: 0;
@@ -279,27 +294,9 @@
                 </table>
             </div>
             
-            <p>Nama kegiatan yang tersebut diatas maka pemerintah desa banyupelle mohon bersama personal pengamanan yang terdiri dari 2 orang dari Kepolisian (Brimob/santiman), 1 orang dari koramil (Babinsa) dan 1 orang dari keamanan (Satpol PP).</p>
+            <p>Demi lancarnya dan suksesnya acara tersebut diatas maka pemerintah desa banyupelle mohon bersama personal pengamanan yang terdiri dari 2 orang dari Kepolisian (Brimob/santiman), 1 orang dari koramil (Babinsa) dan 1 orang dari keamanan (Satpol PP).</p>
             
-            <div class="peraturan-section">
-                <p><strong>Dasar Hukum:</strong></p>
-                <ol>
-                    <li>Undang-undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah</li>
-                    <li>Peraturan Menteri Dalam Negeri Nomor 20 Tahun 2018 tentang Pengelolaan Keuangan Desa</li>
-                    <li>Peraturan Daerah Kabupaten Pamekasan tentang Ketertiban Umum</li>
-                </ol>
-            </div>
             
-            <div class="syarat-section">
-                <p><strong>Dengan syarat agar keramaian tersebut diatas maka pemerintah desa banyupelle memohon agar:</strong></p>
-                <ul>
-                    <li>Kegiatan dilaksanakan sesuai dengan waktu yang telah ditentukan</li>
-                    <li>Tidak mengganggu ketertiban umum dan keamanan masyarakat</li>
-                    <li>Menjaga kebersihan lingkungan sekitar tempat kegiatan</li>
-                    <li>Mengikuti protokol kesehatan yang berlaku</li>
-                    <li>Bertanggung jawab penuh atas segala sesuatu yang terjadi selama kegiatan berlangsung</li>
-                </ul>
-            </div>
             
             <div class="penutup-section">
                 <p>Demikian surat permohonan izin ini disampaikan, atas perhatian dan kerjasama yang diberikan kami ucapkan terima kasih.</p>
@@ -315,6 +312,11 @@
             'spacingTtd' => '120px',
             'customJabatan' => 'Pj. Kepala Desa Banyupelle'
         ])
+    </div>
+
+    {{-- Fallback Footer --}}
+    <div class="footer-fallback">
+        <strong>Dokumen ini telah ditandatangani secara elektronik</strong> | menggunakan sertifikat elektronik BSrE, Badan Siber dan Sandi Negara
     </div>
 </body>
 </html> 

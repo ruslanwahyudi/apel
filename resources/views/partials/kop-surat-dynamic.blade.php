@@ -29,8 +29,8 @@
     .logo-container {
         position: absolute;
         left: 40px;
-        width: 90px;
-        height: 90px;
+        width: 100px;
+        height: 100px;
     }
     
     .logo-container img {
@@ -47,7 +47,7 @@
     }
     
     .header-title {
-        font-size: 20px;
+        font-size: 25px;
         font-weight: bold;
         line-height: 1.1;
         margin: 0 0 2px 0;
@@ -55,7 +55,7 @@
     }
     
     .header-subtitle {
-        font-size: 18px;
+        font-size: 20px;
         font-weight: bold;
         margin: 2px 0;
         text-transform: uppercase;
@@ -70,13 +70,13 @@
     }
     
     .header-address {
-        font-size: 13px;
+        font-size: 15px;
         margin: 3px 0;
         line-height: 1.2;
     }
     
     .header-website {
-        font-size: 12px;
+        font-size: 15px;
         margin: 2px 0;
     }
     

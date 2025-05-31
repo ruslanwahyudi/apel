@@ -65,4 +65,32 @@ class RegisterSurat extends Model
     {
         return $this->hasOne(Pelayanan::class, 'surat_id', 'id');
     }
+
+    public function user()
+    {
+        return $this->hasOne(User::class, 'id', 'user_id');
+    }
+
+    // Helper method untuk mendapatkan data layanan lengkap
+    public function getLayananData()
+    {
+        if (!$this->layanan) {
+            return null;
+        }
+
+        $layanan = $this->layanan->load([
+            'user',
+            'jenisPelayanan', 
+            'dataIdentitas.identitasPemohon',
+            'dokumenPengajuan.syaratDokumen'
+        ]);
+
+        return $layanan;
+    }
+
+    // Helper method untuk check apakah ini surat layanan
+    public function isLayananSurat()
+    {
+        return $this->layanan !== null;
+    }
 } 

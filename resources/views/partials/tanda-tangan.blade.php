@@ -14,6 +14,7 @@
     - $customJabatan: jabatan custom (optional)
     - $customNama: nama custom (optional)
     - $customNip: NIP custom (optional)
+    - $showTte: tampilkan TTE digital signature (default: true)
 --}}
 
 @php
@@ -25,9 +26,10 @@
     $width = '500px';
     $marginTop = $marginTop ?? '40px';
     $marginBottom = $marginBottom ?? '30px';
-    $spacingTtd = $spacingTtd ?? '150px';
+    $spacingTtd = '120px';
     $showTempat = $showTempat ?? true;
     $showJabatan = $showJabatan ?? true;
+    $showTte = $showTte ?? true;
     
     // Set default values untuk custom parameters
     $customTempat = $customTempat ?? null;
@@ -40,12 +42,12 @@
     $data = $data ?? [];
     
     // Determine alignment based on position
-    $textAlign = match($position) {
-        'left' => 'left',
-        'center' => 'center',
-        'right' => 'right',
-        default => 'right'
-    };
+    $textAlign = 'right';
+    if ($position === 'left') {
+        $textAlign = 'left';
+    } elseif ($position === 'center') {
+        $textAlign = 'center';
+    }
     
     // Get data values with fallbacks
     $tempat = $customTempat ?? $kopConfig->desa ?? 'Pamekasan';
@@ -63,6 +65,10 @@
     $jabatan = $customJabatan ?? "Pj. Kepala Desa " . ($kopConfig->desa ?? 'Banyupelle');
     $nama = $customNama ?? $kopConfig->kepala_desa ?? 'SYAMSUL SE';
     $nip = $customNip ?? $kopConfig->nip_kepala_desa ?? '196020520101016';
+    
+    // Path untuk TTE image
+    $ttePath = public_path('assets/images/tte_kades.png');
+    $tteExists = file_exists($ttePath);
 @endphp
 
 <div style="text-align: {{ $textAlign }}; margin-top: {{ $marginTop }}; margin-bottom: {{ $marginBottom }};">
@@ -77,7 +83,17 @@
             <div>{{ $jabatan }}</div>
         @endif
         
-        <div style="margin: {{ $spacingTtd }} 0 10px 0;"></div>
+        {{-- Area Tanda Tangan dengan TTE --}}
+        <div style="margin: 20px 0 10px 0; position: relative; height: {{ $spacingTtd }};">
+            @if($showTte && $tteExists)
+                {{-- TTE Digital Signature --}}
+                <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 1;">
+                    <img src="{{ asset('assets/images/tte_kades.png') }}" 
+                         alt="Tanda Tangan Elektronik" 
+                         style="max-width: 180px; max-height: 120px; opacity: 0.8;">
+                </div>
+            @endif
+        </div>
         
         <div style="font-weight: bold; text-decoration: underline;">{{ $nama }}</div>
         

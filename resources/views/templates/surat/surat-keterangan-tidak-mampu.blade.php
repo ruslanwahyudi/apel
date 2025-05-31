@@ -5,14 +5,14 @@
     <title>Surat Keterangan Tidak Mampu</title>
     <style>
         @page {
-            margin: 1.5cm 2cm 2cm 2cm;
+            margin: 1.5cm 1.5cm 2cm 1.5cm;
             size: A4;
         }
         
         body {
             font-family: 'Times New Roman', serif;
             font-size: 12pt;
-            line-height: 1.5;
+            line-height: 1;
             color: #000;
             margin: 0;
             padding: 0;
@@ -35,13 +35,13 @@
             font-size: 12pt;
             margin: 10px 0 10px 0;
             text-decoration: underline;
-            text-transform: uppercase;
+            /* text-transform: uppercase; */
         }
         
         .isi-surat {
             text-align: justify;
             margin: 5px 0;
-            line-height: 1.8;
+            line-height: 1.4;
         }
         
         .isi-surat p {
@@ -116,6 +116,21 @@
         .mengetahui-nip {
             margin-top: 5px;
         }
+
+        /* Fallback footer jika @page tidak bekerja */
+        .footer-fallback {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 7pt;
+            color: #666;
+            background: white;
+            border-top: 1px solid #ccc;
+            padding: 3px;
+            margin: 0;
+        }
         
         @media print {
             body {
@@ -174,17 +189,17 @@
             <div class="data-pemohon">
                 <table>
                     <tr>
-                        <td>Nama</td>
+                        <td style="width: 280px;">Nama</td>
                         <td>:</td>
                         <td><strong>{{ $data['nama_kepala_desa'] ?? $kopConfig->kepala_desa ?? 'SYAMSUL SE' }}</strong></td>
                     </tr>
                     <tr>
-                        <td>NIP</td>
+                        <td style="width: 280px;">NIP</td>
                         <td>:</td>
                         <td>{{ $data['nip_kepala_desa'] ?? $kopConfig->nip_kepala_desa ?? '196020520101016' }}</td>
                     </tr>
                     <tr>
-                        <td>Jabatan</td>
+                        <td style="width: 280px;">Jabatan</td>
                         <td>:</td>
                         <td>Pj. Kepala Desa {{ $kopConfig->desa ?? 'Banyupelle' }}</td>
                     </tr>
@@ -196,7 +211,7 @@
                 <div class="menerangkan-content">
                     <table>
                         <tr>
-                            <td style="width: 150px;">Nama</td>
+                            <td style="width: 280px;">Nama</td>
                             <td style="width: 20px; text-align: center;">:</td>
                             <td>{{ $data['nama'] ?? '_______________' }}</td>
                         </tr>
@@ -273,10 +288,16 @@
             'marginBottom' => '10px',
             'spacingTtd' => '80px',
             'showTempat' => false,
+            'showTte' => false,
             'customJabatan' => 'Camat ' . $kecamatan,
             'customNama' => $data['nama_camat'] ?? 'Muzanni, S.H, M.Si',
             'customNip' => '197006151994031008'
         ])
+    </div>
+
+    {{-- Fallback Footer --}}
+    <div class="footer-fallback">
+        <strong>Dokumen ini telah ditandatangani secara elektronik</strong> | menggunakan sertifikat elektronik BSrE, Badan Siber dan Sandi Negara
     </div>
 </body>
 </html> 

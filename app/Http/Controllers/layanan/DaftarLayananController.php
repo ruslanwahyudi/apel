@@ -679,4 +679,98 @@ class DaftarLayananController extends Controller
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Simple approve - increment status_layanan by 1 (only for administrator user id = 3)
+     */
+    public function simpleApprove($id)
+    {
+        // Cek apakah user yang login adalah administrator (id = 3)
+        if (auth()->id() !== 3) {
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akses ditolak. Hanya administrator yang dapat melakukan approve.'
+                ], 403);
+            }
+            
+            return redirect()->back()->with('error', 'Akses ditolak. Hanya administrator yang dapat melakukan approve.');
+        }
+
+        try {
+            $layanan = Pelayanan::findOrFail($id);
+
+            // Ambil status saat ini
+            $currentStatus = $layanan->status_layanan;
+            
+            // Cari status selanjutnya (increment by 1)
+            $nextStatus = MasterOption::where('type', 'status_layanan')
+                ->where('id', $currentStatus + 1)
+                ->first();
+
+            if (!$nextStatus) {
+                if (request()->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Status sudah maksimal atau tidak ditemukan status selanjutnya.'
+                    ], 400);
+                }
+                
+                return redirect()->back()->with('error', 'Status sudah maksimal atau tidak ditemukan status selanjutnya.');
+            }
+
+            // Update status
+            $upd = $layanan->update(['status_layanan' => $nextStatus->id]);
+            if($upd){
+                // katgori surat
+                $kategori_surat = KategoriSurat::where('jenis_pelayanan_id', $layanan->jenis_pelayanan_id)->where('tipe_surat', 'layanan')->first()->id;
+                $no_surat = generateNoSurat();
+                $jenis_surat = $layanan->jenisPelayanan->nama_pelayanan;
+                $perihal = $layanan->jenisPelayanan->nama_pelayanan;
+                $tanggal_surat = now();
+                $status_surat = MasterOption::where(['value' => 'Proses', 'type' => 'status_surat'])->first()->id;
+                $signed_by = User::where('role', 'Kepala Desa')->first()->id;
+    
+                $ins_reg_surat = RegisterSurat::create([
+                    'nomor_surat' => $no_surat,
+                    'kategori_surat_id' => $kategori_surat,
+                    'jenis_surat' => $jenis_surat,
+                    'perihal' => $perihal,
+                    'tanggal_surat' => $tanggal_surat,
+                    'status' => $status_surat,
+                    'signer_id' => $signed_by,
+                ]);
+
+                if($ins_reg_surat){
+                    $layanan->surat_id = $ins_reg_surat->id;
+                    $layanan->save();
+                }
+            }
+
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Status berhasil diubah menjadi: {$nextStatus->description}"
+                ]);
+            }
+
+            return redirect()->back()->with('success', "Status berhasil diubah menjadi: {$nextStatus->description}");
+
+        } catch (\Exception $e) {
+            \Log::error('Error in simpleApprove:', [
+                'layanan_id' => $id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage()
+            ]);
+
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
 } 

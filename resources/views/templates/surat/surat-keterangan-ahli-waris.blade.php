@@ -2,19 +2,11 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Surat Keterangan Domisili</title>
+    <title>Surat Keterangan Ahli Waris</title>
     <style>
         @page {
-            margin: 1.5cm 2cm 2.5cm 2cm;
+            margin: 1.5cm 1.5cm 2cm 1.5cm;
             size: A4;
-            @bottom-center {
-                content: "Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik BSrE, Badan Siber dan Sandi Negara";
-                font-size: 7pt;
-                color: #666;
-                text-align: center;
-                border-top: 1px solid #ccc;
-                padding-top: 5px;
-            }
         }
         
         body {
@@ -24,6 +16,7 @@
             color: #000;
             margin: 0;
             padding: 0;
+            padding-bottom: 60px; /* Space for footer */
         }
         
         .surat-content {
@@ -32,10 +25,21 @@
             width: 100%;
         }
         
+        .judul-surat {
+            text-align: center;
+            font-weight: bold;
+            font-size: 12pt;
+            margin: 30px 0 25px 0;
+            text-decoration: underline;
+            /* text-transform: uppercase; */
+            letter-spacing: 1px;
+            clear: both;
+        }
+        
         .nomor-tanggal {
             text-align: center;
-            margin: 25px 0 30px 0;
-            font-size: 12pt;
+            margin: 5px 0 10px 0;
+            font-size: 10pt;
             clear: both;
             width: 100%;
         }
@@ -44,25 +48,10 @@
             margin-bottom: 5px;
         }
         
-        .nomor-tanggal .tanggal-line {
-            margin-bottom: 5px;
-        }
-        
-        .judul-surat {
-            text-align: center;
-            font-weight: bold;
-            font-size: 14pt;
-            margin: 30px 0 25px 0;
-            text-decoration: underline;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            clear: both;
-        }
-        
         .isi-surat {
             text-align: justify;
             margin: 20px 0;
-            line-height: 1.8;
+            line-height: 1;
         }
         
         .isi-surat p {
@@ -97,15 +86,56 @@
             font-weight: normal;
         }
         
-        .keperluan {
-            font-weight: bold;
-            text-decoration: underline;
-        }
-        
         .nama-bold {
             font-weight: bold;
         }
         
+        .data-almarhum {
+            margin: 20px 0 20px 50px;
+        }
+        
+        .data-almarhum table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        
+        .data-almarhum td {
+            padding: 4px 0;
+            vertical-align: top;
+        }
+        
+        .data-almarhum td:first-child {
+            width: 180px;
+        }
+        
+        .data-almarhum td:nth-child(2) {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .data-ahliwaris {
+            margin: 20px 0 20px 50px;
+        }
+        
+        .data-ahliwaris table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        
+        .data-ahliwaris td {
+            padding: 4px 0;
+            vertical-align: top;
+        }
+        
+        .data-ahliwaris td:first-child {
+            width: 180px;
+        }
+        
+        .data-ahliwaris td:nth-child(2) {
+            width: 20px;
+            text-align: center;
+        }
+
         /* Fallback footer jika @page tidak bekerja */
         .footer-fallback {
             position: fixed;
@@ -145,7 +175,7 @@
                 margin: 18px 0;
             }
             
-            .data-pemohon {
+            .data-pemohon, .data-almarhum, .data-ahliwaris {
                 margin: 18px 0 18px 45px;
             }
         }
@@ -158,13 +188,12 @@
         
         {{-- Judul Surat --}}
         <div class="judul-surat">
-            SURAT KETERANGAN DOMISILI
+            SURAT KETERANGAN AHLI WARIS
         </div>
         
-        {{-- Nomor dan Tanggal Surat - dipindah ke bawah judul --}}
+        {{-- Nomor Surat --}}
         <div class="nomor-tanggal">
             <div class="nomor-line">Nomor: {{ $data['nomor'] ?? $nomor_surat ?? 'XXX/XX/XX/2025' }}</div>
-            
         </div>
         
         {{-- Isi Surat --}}
@@ -196,14 +225,19 @@
                 </table>
             </div>
 
-            <p>Menerangkan dengan sebenarnya bahwa :</p>
+            <p>Menerangkan bahwa :</p>
             
-            <div class="data-pemohon">
+            <div class="data-almarhum">
                 <table>
                     <tr>
                         <td style="width: 280px;">Nama</td>
                         <td>:</td>
-                        <td><span class="nama-bold">{{ $data['nama'] ?? $data['nama'] ?? '................................' }}</span></td>
+                        <td><span class="nama-bold">{{ $data['nama'] ?? '................................' }}</span></td>
+                    </tr>
+                    <tr>
+                        <td style="width: 180px;">NIK</td>
+                        <td>:</td>
+                        <td>{{ $data['nik'] ?? '................................' }}</td>
                     </tr>
                     <tr>
                         <td>Tempat Tanggal Lahir</td>
@@ -226,6 +260,11 @@
                         </td>
                     </tr>
                     <tr>
+                        <td>Pekerjaan</td>
+                        <td>:</td>
+                        <td>{{ $data['pekerjaan'] ?? '................................' }}</td>
+                    </tr>
+                    <tr>
                         <td>Alamat</td>
                         <td>:</td>
                         <td>{{ $data['alamat'] ?? '................................' }}</td>
@@ -233,13 +272,49 @@
                 </table>
             </div>
 
-            <p>Adalah benar-benar penduduk Desa {{ $kopConfig->desa ?? 'Banyupelle' }} 
-            Kecamatan {{ $kopConfig->kecamatan ?? 'Palengaan' }} 
-            Kabupaten {{ $kopConfig->kabupaten ?? 'Pamekasan' }} 
-            yang berdomisili di alamat tersebut diatas.</p>
+            <p>Benar-benar AHLI WARIS dari :</p>
             
-            <p>Demikian surat keterangan domisili ini dibuat dengan sebenarnya dan dapat 
-            dipergunakan sebagaimana mestinya.</p>
+            <div class="data-ahliwaris">
+                <table>
+                    <tr>
+                        <td style="width: 280px;">Nama</td>
+                        <td>:</td>
+                        <td><span class="nama-bold">{{ $data['nama_ahliwaris'] ?? '................................' }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>NIK</td>
+                        <td>:</td>
+                        <td>{{ $data['nik_ahliwaris'] ?? '................................' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Tempat Tanggal Lahir</td>
+                        <td>:</td>
+                        <td>{{ $data['tempat_lahir_ahliwaris'] ?? '................................' }}, 
+                            @php
+                                $tanggalLahirAhliWaris = $data['tanggal_lahir_ahliwaris'] ?? null;
+                                
+                                if (!empty($tanggalLahirAhliWaris)) {
+                                    try {
+                                        $formattedDateAhliWaris = \Carbon\Carbon::parse($tanggalLahirAhliWaris)->locale('id')->translatedFormat('d F Y');
+                                    } catch (\Exception $e) {
+                                        $formattedDateAhliWaris = $tanggalLahirAhliWaris;
+                                    }
+                                } else {
+                                    $formattedDateAhliWaris = '................................';
+                                }
+                            @endphp
+                            {{ $formattedDateAhliWaris }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Alamat</td>
+                        <td>:</td>
+                        <td>{{ $data['alamat_ahliwaris'] ?? '................................' }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <p>Demikian surat keterangan ini dibuat dengan sebenarnya dan dapat dipergunakan sebagaimana mestinya.</p>
         </div>
         
         {{-- Include Tanda Tangan --}}
@@ -248,7 +323,7 @@
             'width' => '300px',
             'marginTop' => '50px',
             'marginBottom' => '30px',
-            'spacingTtd' => '100px'
+            'spacingTtd' => '80px'
         ])
     </div>
     

@@ -2,19 +2,11 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Surat Keterangan Domisili</title>
+    <title>Surat Keterangan Kematian</title>
     <style>
         @page {
-            margin: 1.5cm 2cm 2.5cm 2cm;
+            margin: 1.5cm 1.5cm 2cm 1.5cm;
             size: A4;
-            @bottom-center {
-                content: "Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik BSrE, Badan Siber dan Sandi Negara";
-                font-size: 7pt;
-                color: #666;
-                text-align: center;
-                border-top: 1px solid #ccc;
-                padding-top: 5px;
-            }
         }
         
         body {
@@ -24,6 +16,7 @@
             color: #000;
             margin: 0;
             padding: 0;
+            padding-bottom: 60px; /* Space for footer */
         }
         
         .surat-content {
@@ -32,10 +25,21 @@
             width: 100%;
         }
         
+        .judul-surat {
+            text-align: center;
+            font-weight: bold;
+            font-size: 12pt;
+            margin: 30px 0 2px 0;
+            text-decoration: underline;
+            /* text-transform: uppercase; */
+            letter-spacing: 1px;
+            clear: both;
+        }
+        
         .nomor-tanggal {
             text-align: center;
-            margin: 25px 0 30px 0;
-            font-size: 12pt;
+            margin: 5px 0 10px 0;
+            font-size: 10pt;
             clear: both;
             width: 100%;
         }
@@ -44,25 +48,10 @@
             margin-bottom: 5px;
         }
         
-        .nomor-tanggal .tanggal-line {
-            margin-bottom: 5px;
-        }
-        
-        .judul-surat {
-            text-align: center;
-            font-weight: bold;
-            font-size: 14pt;
-            margin: 30px 0 25px 0;
-            text-decoration: underline;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            clear: both;
-        }
-        
         .isi-surat {
             text-align: justify;
             margin: 20px 0;
-            line-height: 1.8;
+            line-height: 1;
         }
         
         .isi-surat p {
@@ -97,15 +86,45 @@
             font-weight: normal;
         }
         
-        .keperluan {
-            font-weight: bold;
-            text-decoration: underline;
-        }
-        
         .nama-bold {
             font-weight: bold;
         }
         
+        .data-almarhum {
+            margin: 20px 0 20px 50px;
+        }
+        
+        .data-almarhum table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        
+        .data-almarhum td {
+            padding: 4px 0;
+            vertical-align: top;
+        }
+        
+        .data-almarhum td:first-child {
+            width: 180px;
+        }
+        
+        .data-almarhum td:nth-child(2) {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .keterangan-kematian {
+            margin: 20px 0;
+            text-indent: 30px;
+            line-height: 1.6;
+        }
+        
+        .keterangan-kematian .waktu-kematian {
+            margin: 10px 0;
+            padding-left: 0;
+            text-indent: 0;
+        }
+
         /* Fallback footer jika @page tidak bekerja */
         .footer-fallback {
             position: fixed;
@@ -145,7 +164,7 @@
                 margin: 18px 0;
             }
             
-            .data-pemohon {
+            .data-pemohon, .data-almarhum {
                 margin: 18px 0 18px 45px;
             }
         }
@@ -158,13 +177,12 @@
         
         {{-- Judul Surat --}}
         <div class="judul-surat">
-            SURAT KETERANGAN DOMISILI
+            SURAT KETERANGAN KEMATIAN
         </div>
         
-        {{-- Nomor dan Tanggal Surat - dipindah ke bawah judul --}}
+        {{-- Nomor Surat --}}
         <div class="nomor-tanggal">
             <div class="nomor-line">Nomor: {{ $data['nomor'] ?? $nomor_surat ?? 'XXX/XX/XX/2025' }}</div>
-            
         </div>
         
         {{-- Isi Surat --}}
@@ -196,14 +214,19 @@
                 </table>
             </div>
 
-            <p>Menerangkan dengan sebenarnya bahwa :</p>
+            <p>Menerangkan bahwa :</p>
             
-            <div class="data-pemohon">
+            <div class="data-almarhum">
                 <table>
                     <tr>
                         <td style="width: 280px;">Nama</td>
                         <td>:</td>
-                        <td><span class="nama-bold">{{ $data['nama'] ?? $data['nama'] ?? '................................' }}</span></td>
+                        <td><span class="nama-bold">{{ $data['nama'] ?? '................................' }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>NIK</td>
+                        <td>:</td>
+                        <td>{{ $data['nik'] ?? '................................' }}</td>
                     </tr>
                     <tr>
                         <td>Tempat Tanggal Lahir</td>
@@ -214,7 +237,12 @@
                                 
                                 if (!empty($tanggalLahir)) {
                                     try {
-                                        $formattedDate = \Carbon\Carbon::parse($tanggalLahir)->locale('id')->translatedFormat('d F Y');
+                                        // Coba parse sebagai tanggal jika formatnya benar
+                                        if (strlen($tanggalLahir) === 10 && substr_count($tanggalLahir, '-') === 2) {
+                                            $formattedDate = \Carbon\Carbon::parse($tanggalLahir)->locale('id')->translatedFormat('d F Y');
+                                        } else {
+                                            $formattedDate = $tanggalLahir;
+                                        }
                                     } catch (\Exception $e) {
                                         $formattedDate = $tanggalLahir;
                                     }
@@ -233,13 +261,40 @@
                 </table>
             </div>
 
-            <p>Adalah benar-benar penduduk Desa {{ $kopConfig->desa ?? 'Banyupelle' }} 
-            Kecamatan {{ $kopConfig->kecamatan ?? 'Palengaan' }} 
-            Kabupaten {{ $kopConfig->kabupaten ?? 'Pamekasan' }} 
-            yang berdomisili di alamat tersebut diatas.</p>
-            
-            <p>Demikian surat keterangan domisili ini dibuat dengan sebenarnya dan dapat 
-            dipergunakan sebagaimana mestinya.</p>
+            <div class="keterangan-kematian">
+                <p>Bahwa orang tersebut diatas benar-benar telah meninggal dunia karena sakit pada hari 
+                <strong>
+                    @php
+                        $tanggalKematian = $data['tanggal'] ?? null;
+                        
+                        if (!empty($tanggalKematian)) {
+                            try {
+                                $hariKematian = \Carbon\Carbon::parse($tanggalKematian)->locale('id')->translatedFormat('l');
+                                $tanggalFormatted = \Carbon\Carbon::parse($tanggalKematian)->locale('id')->translatedFormat('d F Y');
+                                $bulanKematian = \Carbon\Carbon::parse($tanggalKematian)->locale('id')->translatedFormat('F');
+                                $tahunKematian = \Carbon\Carbon::parse($tanggalKematian)->locale('id')->translatedFormat('Y');
+                            } catch (\Exception $e) {
+                                $hariKematian = '...............';
+                                $tanggalFormatted = $tanggalKematian;
+                                $bulanKematian = '...............';
+                                $tahunKematian = '...............';
+                            }
+                        } else {
+                            $hariKematian = '...............';
+                            $tanggalFormatted = '...............';
+                            $bulanKematian = '...............';
+                            $tahunKematian = '...............';
+                        }
+                    @endphp
+                    {{ $hariKematian }}
+                </strong> 
+                tanggal <strong>{{ $tanggalFormatted }}</strong> Bulan <strong>{{ $bulanKematian }}</strong> Tahun <strong>{{ $tahunKematian }}</strong> jam 
+                <strong>{{ $data['jam'] ?? '...............' }}</strong>
+                Wib di rumah data Dusum Pangongangan Desa Banyupelle Kecamatan Palengaan Kabupaten Pamekasan.
+                </p>
+            </div>
+
+            <p>Demikian surat keterangan ini dibuat dengan sebenarnya dan dapat dipergunakan sebagaimana mestinya.</p>
         </div>
         
         {{-- Include Tanda Tangan --}}
@@ -251,7 +306,6 @@
             'spacingTtd' => '100px'
         ])
     </div>
-    
     {{-- Fallback Footer --}}
     <div class="footer-fallback">
         <strong>Dokumen ini telah ditandatangani secara elektronik</strong> | menggunakan sertifikat elektronik BSrE, Badan Siber dan Sandi Negara
