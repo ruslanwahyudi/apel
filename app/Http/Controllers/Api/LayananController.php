@@ -410,24 +410,24 @@ class LayananController extends Controller
             ]);
 
             // Cek apakah layanan sudah diproses sebelumnya
-            if ($layanan->status_layanan && $layanan->status_layanan != 1) {
-                $currentStatus = MasterOption::find($layanan->status_layanan);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Layanan sudah diproses dengan status: ' . ($currentStatus ? $currentStatus->value : 'Unknown')
-                ], 422);
-            }
+            // if ($layanan->status_layanan && $layanan->status_layanan != 1) {
+            //     $currentStatus = MasterOption::find($layanan->status_layanan);
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Layanan sudah diproses dengan status: ' . ($currentStatus ? $currentStatus->value : 'Unknown')
+            //     ], 422);
+            // }
 
-            $statusLayanan = MasterOption::where(['value' => 'Sedang Diproses', 'type' => 'status_layanan'])->first();
+            // $statusLayanan = MasterOption::where(['value' => 'Sedang Diproses', 'type' => 'status_layanan'])->first();
             
-            if (!$statusLayanan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Status layanan "Sedang Diproses" tidak ditemukan di database'
-                ], 500);
-            }
+            // if (!$statusLayanan) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Status layanan "Sedang Diproses" tidak ditemukan di database'
+            //     ], 500);
+            // }
 
-            $upd = $layanan->update(['status_layanan' => $statusLayanan->id]);
+            $upd = $layanan->update(['status_layanan' => '6']);
             
             if($upd){
                 try {
