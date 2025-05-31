@@ -258,6 +258,14 @@ class LayananController extends Controller
         //     return response()->json($validator->errors(), 422);
         // }
 
+        \Log::info('Finalisasi method called', [
+            'received_id' => $id,
+            'id_type' => gettype($id),
+            'request_all' => $request->all(),
+            'request_method' => $request->method(),
+            'request_url' => $request->fullUrl()
+        ]);
+
         $layanan = Pelayanan::findOrFail($id);
         $user = User::find($layanan->user_id);
 
