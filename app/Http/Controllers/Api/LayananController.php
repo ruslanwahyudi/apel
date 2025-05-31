@@ -357,200 +357,235 @@ class LayananController extends Controller
 
     public function approve(Request $request, $id)
     {
-
-        $layanan = Pelayanan::with('jenisPelayanan')->findOrFail($id);
-
-        $statusLayanan = MasterOption::where(['value' => 'Sedang Diproses', 'type' => 'status_layanan'])->first();
-
-        $upd = $layanan->update(['status_layanan' => $statusLayanan->id]);
+        // Debug logging
+        \Log::info('Approve method called', [
+            'received_id' => $id,
+            'id_type' => gettype($id),
+            'request_all' => $request->all(),
+            'request_method' => $request->method(),
+            'request_url' => $request->fullUrl()
+        ]);
         
-        if($upd){
-            $no_surat = generateNoSurat();
-            $kategori_surat = KategoriSurat::where('nama', 'Layanan')->first()->id;
-            $jenis_surat = $layanan->jenisPelayanan->nama_pelayanan;
-            $perihal = $layanan->jenisPelayanan->nama_pelayanan;
-            $tanggal_surat = now();
-            $status_surat = MasterOption::where(['value' => 'Proses', 'type' => 'status_surat'])->first()->id;
-            $signed_by = User::where('role', 'Kepala Desa')->first()->id;
-
-            $ins_reg_surat = RegisterSurat::create([
-                'nomor_surat' => $no_surat,
-                'kategori_surat_id' => $kategori_surat,
-                'jenis_surat' => $jenis_surat,
-                'perihal' => $perihal,
-                'tanggal_surat' => $tanggal_surat,
-                'status' => $status_surat,
-                'signer_id' => $signed_by,
-            ]);
-
-            if($ins_reg_surat){
-                $layanan->update(['surat_id' => $ins_reg_surat->id]);
+        try {
+            // Validasi ID
+            if (!is_numeric($id) || $id <= 0) {
+                \Log::warning('Invalid ID received in approve method', [
+                    'received_id' => $id,
+                    'id_type' => gettype($id)
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'ID layanan tidak valid'
+                ], 400);
             }
 
-            // Kirim notifikasi ke user
-            try {
-                $notification = Notifications::create([
-                    'user_id' => $layanan->user_id,
-                    'title' => 'Layanan Disetujui',
-                    'message' => "Pengajuan layanan " . 
-                        ($layanan->jenisPelayanan ? $layanan->jenisPelayanan->nama_pelayanan : '') . 
-                        " Anda telah disetujui",
-                    'type' => 'layanan'
+            // Cari layanan dengan error handling yang lebih baik
+            $layanan = Pelayanan::with('jenisPelayanan')->find($id);
+            
+            if (!$layanan) {
+                \Log::warning('Layanan not found', [
+                    'requested_id' => $id,
+                    'available_ids' => Pelayanan::pluck('id')->toArray()
                 ]);
-
-                $user = User::find($layanan->user_id);
                 
-                if ($user && $user->fcm_token) {
-                    // Generate access token
-                    $client = new Client();
-                    $client->setAuthConfig([
-                        "type" => "service_account",
-                        "project_id" => config('services.firebase.project_id'),
-                        "private_key_id" => "private_key_id",
-                        "private_key" => config('services.firebase.private_key'),
-                        "client_email" => config('services.firebase.client_email'),
-                        "client_id" => "client_id",
-                        "auth_uri" => "https://accounts.google.com/o/oauth2/auth",
-                        "token_uri" => "https://oauth2.googleapis.com/token",
-                        "auth_provider_x509_cert_url" => "https://www.googleapis.com/oauth2/v1/certs",
-                        "client_x509_cert_url" => "https://www.googleapis.com/robot/v1/metadata/x509/".config('services.firebase.client_email')
-                    ]);
-                    
-                    $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
-                    $client->fetchAccessTokenWithAssertion();
-                    $accessToken = $client->getAccessToken()['access_token'];
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Layanan dengan ID ' . $id . ' tidak ditemukan'
+                ], 404);
+            }
 
-                    // Kirim ke FCM
-                    $response = Http::withHeaders([
-                        'Authorization' => 'Bearer ' . $accessToken,
-                        'Content-Type' => 'application/json',
-                    ])->post('https://fcm.googleapis.com/v1/projects/'.config('services.firebase.project_id').'/messages:send', [
-                        'message' => [
-                            'token' => $user->fcm_token,
-                            'notification' => [
-                                'title' => $notification->title,
-                                'body' => $notification->message
-                            ],
-                            'data' => [
-                                'notification_id' => (string)$notification->id,
-                                'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
-                            ],
-                            'android' => [
+            \Log::info('Layanan found successfully', [
+                'layanan_id' => $layanan->id,
+                'current_status' => $layanan->status_layanan,
+                'jenis_pelayanan' => $layanan->jenisPelayanan ? $layanan->jenisPelayanan->nama_pelayanan : 'null'
+            ]);
+
+            // Cek apakah layanan sudah diproses sebelumnya
+            if ($layanan->status_layanan && $layanan->status_layanan != 1) {
+                $currentStatus = MasterOption::find($layanan->status_layanan);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Layanan sudah diproses dengan status: ' . ($currentStatus ? $currentStatus->value : 'Unknown')
+                ], 422);
+            }
+
+            $statusLayanan = MasterOption::where(['value' => 'Sedang Diproses', 'type' => 'status_layanan'])->first();
+            
+            if (!$statusLayanan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Status layanan "Sedang Diproses" tidak ditemukan di database'
+                ], 500);
+            }
+
+            $upd = $layanan->update(['status_layanan' => $statusLayanan->id]);
+            
+            if($upd){
+                try {
+                    $no_surat = generateNoSurat();
+                    
+                    // Cari kategori surat untuk layanan
+                    $kategori_surat = KategoriSurat::where('nama', 'Layanan')->first();
+                    if (!$kategori_surat) {
+                        // Jika tidak ada kategori "Layanan", buat atau gunakan kategori default
+                        $kategori_surat = KategoriSurat::first();
+                        if (!$kategori_surat) {
+                            throw new \Exception('Tidak ada kategori surat yang tersedia');
+                        }
+                    }
+                    
+                    $jenis_surat = $layanan->jenisPelayanan->nama_pelayanan ?? 'Layanan';
+                    $perihal = $layanan->jenisPelayanan->nama_pelayanan ?? 'Layanan';
+                    $tanggal_surat = now();
+                    
+                    $status_surat = MasterOption::where(['value' => 'Proses', 'type' => 'status_surat'])->first();
+                    if (!$status_surat) {
+                        // Gunakan status default jika tidak ada
+                        $status_surat = MasterOption::where('type', 'status_surat')->first();
+                        if (!$status_surat) {
+                            throw new \Exception('Tidak ada status surat yang tersedia');
+                        }
+                    }
+                    
+                    $signed_by = User::where('role', 'Kepala Desa')->first();
+                    if (!$signed_by) {
+                        // Gunakan admin sebagai fallback
+                        $signed_by = User::where('role', 'admin')->first();
+                        if (!$signed_by) {
+                            throw new \Exception('Tidak ada user yang dapat menandatangani surat');
+                        }
+                    }
+
+                    $ins_reg_surat = RegisterSurat::create([
+                        'nomor_surat' => $no_surat,
+                        'kategori_surat_id' => $kategori_surat->id,
+                        'jenis_surat' => $jenis_surat,
+                        'perihal' => $perihal,
+                        'isi_surat' => 'Surat layanan: ' . $perihal,
+                        'tujuan' => 'Pemohon Layanan',
+                        'pengirim' => 'Desa Banyupelle',
+                        'tanggal_surat' => $tanggal_surat,
+                        'status' => $status_surat->id,
+                        'signer_id' => $signed_by->id,
+                    ]);
+
+                    if($ins_reg_surat){
+                        $layanan->update(['surat_id' => $ins_reg_surat->id]);
+                        
+                        \Log::info('Register surat created successfully', [
+                            'layanan_id' => $layanan->id,
+                            'surat_id' => $ins_reg_surat->id,
+                            'nomor_surat' => $no_surat
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Error creating register surat for approval', [
+                        'layanan_id' => $layanan->id,
+                        'error' => $e->getMessage()
+                    ]);
+                    // Continue execution even if register surat creation fails
+                }
+
+                // Kirim notifikasi ke user
+                try {
+                    $notification = Notifications::create([
+                        'user_id' => $layanan->user_id,
+                        'title' => 'Layanan Disetujui',
+                        'message' => "Pengajuan layanan " . 
+                            ($layanan->jenisPelayanan ? $layanan->jenisPelayanan->nama_pelayanan : '') . 
+                            " Anda telah disetujui",
+                        'type' => 'layanan'
+                    ]);
+
+                    $user = User::find($layanan->user_id);
+                    
+                    if ($user && $user->fcm_token) {
+                        // Generate access token
+                        $client = new Client();
+                        $client->setAuthConfig([
+                            "type" => "service_account",
+                            "project_id" => config('services.firebase.project_id'),
+                            "private_key_id" => "private_key_id",
+                            "private_key" => config('services.firebase.private_key'),
+                            "client_email" => config('services.firebase.client_email'),
+                            "client_id" => "client_id",
+                            "auth_uri" => "https://accounts.google.com/o/oauth2/auth",
+                            "token_uri" => "https://oauth2.googleapis.com/token",
+                            "auth_provider_x509_cert_url" => "https://www.googleapis.com/oauth2/v1/certs",
+                            "client_x509_cert_url" => "https://www.googleapis.com/robot/v1/metadata/x509/".config('services.firebase.client_email')
+                        ]);
+                        
+                        $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
+                        $client->fetchAccessTokenWithAssertion();
+                        $accessToken = $client->getAccessToken()['access_token'];
+
+                        // Kirim ke FCM
+                        $response = Http::withHeaders([
+                            'Authorization' => 'Bearer ' . $accessToken,
+                            'Content-Type' => 'application/json',
+                        ])->post('https://fcm.googleapis.com/v1/projects/'.config('services.firebase.project_id').'/messages:send', [
+                            'message' => [
+                                'token' => $user->fcm_token,
                                 'notification' => [
+                                    'title' => $notification->title,
+                                    'body' => $notification->message
+                                ],
+                                'data' => [
+                                    'notification_id' => (string)$notification->id,
                                     'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
-                                ]
-                            ],
-                            'apns' => [
-                                'payload' => [
-                                    'aps' => [
-                                        'sound' => 'default'
+                                ],
+                                'android' => [
+                                    'notification' => [
+                                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
+                                    ]
+                                ],
+                                'apns' => [
+                                    'payload' => [
+                                        'aps' => [
+                                            'sound' => 'default'
+                                        ]
                                     ]
                                 ]
                             ]
-                        ]
-                    ]);
+                        ]);
 
-                    \Log::info('FCM Response for layanan approval:', [
+                        \Log::info('FCM Response for layanan approval:', [
+                            'layanan_id' => $layanan->id,
+                            'user_id' => $layanan->user_id,
+                            'status' => $response->status(),
+                            'body' => $response->json()
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Error sending notification for layanan approval:', [
                         'layanan_id' => $layanan->id,
-                        'user_id' => $layanan->user_id,
-                        'status' => $response->status(),
-                        'body' => $response->json()
+                        'error' => $e->getMessage()
                     ]);
+                    // Lanjutkan eksekusi meski notifikasi gagal
                 }
-            } catch (\Exception $e) {
-                \Log::error('Error sending notification for layanan approval:', [
-                    'layanan_id' => $layanan->id,
-                    'error' => $e->getMessage()
-                ]);
-                // Lanjutkan eksekusi meski notifikasi gagal
             }
 
-            // Kirim notifikasi ke Kepala Desa
-            // $kades = User::where('role', 'Kepala Desa')->first();
-            // try {
-            //     $notification = Notifications::create([
-            //         'user_id' => $kades->id,
-            //         'title' => 'Layanan Menunggu Tandatangan',
-            //         'message' => "Pengajuan layanan " . 
-            //             ($layanan->jenisPelayanan ? $layanan->jenisPelayanan->nama_pelayanan : '') . 
-            //             " telah disetujui, silahkan cek di halaman layanan untuk tandatangan",
-            //         'type' => 'layanan'
-            //     ]);
+            $layanan->load(['jenisPelayanan', 'dataIdentitas', 'dokumenPengajuan', 'statusLayanan']);
 
-                    
-            //     if ($kades && $kades->fcm_token) {
-            //         // Generate access token
-            //         $client = new Client();
-            //         $client->setAuthConfig([
-            //             "type" => "service_account",
-            //             "project_id" => config('services.firebase.project_id'),
-            //             "private_key_id" => "private_key_id",
-            //             "private_key" => config('services.firebase.private_key'),
-            //             "client_email" => config('services.firebase.client_email'),
-            //             "client_id" => "client_id",
-            //             "auth_uri" => "https://accounts.google.com/o/oauth2/auth",
-            //             "token_uri" => "https://oauth2.googleapis.com/token",
-            //             "auth_provider_x509_cert_url" => "https://www.googleapis.com/oauth2/v1/certs",
-            //             "client_x509_cert_url" => "https://www.googleapis.com/robot/v1/metadata/x509/".config('services.firebase.client_email')
-            //         ]);
-                    
-            //         $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
-            //         $client->fetchAccessTokenWithAssertion();
-            //         $accessToken = $client->getAccessToken()['access_token'];
-
-            //         // Kirim ke FCM
-            //         $response = Http::withHeaders([
-            //             'Authorization' => 'Bearer ' . $accessToken,
-            //             'Content-Type' => 'application/json',
-            //         ])->post('https://fcm.googleapis.com/v1/projects/'.config('services.firebase.project_id').'/messages:send', [
-            //             'message' => [
-            //                 'token' => $kades->fcm_token,
-            //                 'notification' => [
-            //                     'title' => $notification->title,
-            //                     'body' => $notification->message
-            //                 ],
-            //                 'data' => [
-            //                     'notification_id' => (string)$notification->id,
-            //                     'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
-            //                 ],
-            //                 'android' => [
-            //                     'notification' => [
-            //                         'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
-            //                     ]
-            //                 ],
-            //                 'apns' => [
-            //                     'payload' => [
-            //                         'aps' => [
-            //                             'sound' => 'default'
-            //                         ]
-            //                     ]
-            //                 ]
-            //             ]
-            //         ]);
-
-            //         \Log::info('FCM Response for layanan signing:', [
-            //             'layanan_id' => $layanan->id,
-            //             'user_id' => $kades->id,
-            //             'status' => $response->status(),
-            //             'body' => $response->json()
-            //         ]);
-            //     }
-            // } catch (\Exception $e) {
-            //     \Log::error('Error sending notification to kades for layanan signing:', [
-            //         'layanan_id' => $layanan->id,
-            //         'error' => $e->getMessage()
-            //     ]);
-            //     // Lanjutkan eksekusi meski notifikasi gagal
-            // }
+            return response()->json([
+                'success' => true,
+                'message' => 'Layanan berhasil di approve dan menunggu tandatangan',
+                'data' => $layanan
+            ], 200);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in approve method:', [
+                'layanan_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memproses approval: ' . $e->getMessage()
+            ], 500);
         }
-
-        $layanan->load(['jenisPelayanan', 'dataIdentitas', 'dokumenPengajuan', 'statusLayanan']);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Layanan berhasil di approve dan menunggu tandatangan',
-            'data' => $layanan
-        ], 200);
     }
 
     public function reject(Request $request)

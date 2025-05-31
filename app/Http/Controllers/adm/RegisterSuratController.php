@@ -429,11 +429,11 @@ class RegisterSuratController extends Controller
             ]);
 
             // Fallback ke template default jika terjadi error
-            $pdf = PDF::loadView('adm.register_surat.print', [
-                'surat' => $surat
-            ])->setPaper('a4', 'portrait');
+        $pdf = PDF::loadView('adm.register_surat.print', [
+            'surat' => $surat
+        ])->setPaper('a4', 'portrait');
 
-            return $pdf->stream('Surat_' . $surat->perihal . '.pdf');
+        return $pdf->stream('Surat_' . $surat->perihal . '.pdf');
         }
     }
 } 
