@@ -43,6 +43,9 @@
                                         </div>
                                         <div class="col-md-8 text-right">
                                             <button id="refreshButton" class="btn btn-secondary btn-sm">Refresh <i class="fa fa-refresh"></i></button>
+                                            <a href="{{ route('adm.kategori-surat.multiple-print') }}" class="btn btn-success btn-sm">
+                                                <i class="fa fa-files-o"></i> Cetak Multiple Surat
+                                            </a>
                                             @if (can('kategori surat', 'can_create'))
                                                 <a href="{{ route('adm.kategori-surat.create') }}" class="btn btn-primary btn-sm">Tambah <i class="fa fa-plus"></i></a>
                                             @endif

@@ -833,22 +833,31 @@ class KategoriSuratController extends Controller
     
     private function generatePdfDocument($kategori, $formData, $pdfFields)
     {
+        \Log::info("Generating PDF document for kategori: {$kategori->nama} (ID: {$kategori->id})", [
+            'template_type' => $kategori->template_type,
+            'memory_before' => memory_get_usage(true) / 1024 / 1024 . ' MB'
+        ]);
+
         // Check if we have a Blade template (HIGHEST PRIORITY)
         if ($kategori->template_type === 'blade' && $kategori->hasBladeTemplate()) {
+            \Log::info("Using Blade template for kategori {$kategori->id}");
             return $this->generateFromBladeTemplate($kategori, $formData);
         }
         
         // Check if we have a DOCX template file uploaded
         if ($kategori->template_type === 'docx' && $kategori->docx_template_path) {
+            \Log::info("Using DOCX template for kategori {$kategori->id}");
             return $this->generateFromDocxTemplate($kategori, $formData, $kategori->docx_form_fields ?? []);
         }
         
         // Check if we have a PDF template file uploaded
         if ($kategori->template_type === 'pdf' && $kategori->pdf_template_path) {
+            \Log::info("Using PDF template for kategori {$kategori->id}");
             return $this->generateFromPdfTemplate($kategori, $formData, $pdfFields);
         }
         
         // Fallback to text template
+        \Log::info("Using text template fallback for kategori {$kategori->id}");
         return $this->generateFromTextTemplate($kategori, $formData, $pdfFields);
     }
 
@@ -3397,5 +3406,608 @@ class KategoriSuratController extends Controller
         $formatted = preg_replace('/(<br\s*\/?>){3,}/', '<br/><br/>', $formatted);
         
         return $formatted;
+    }
+
+    // Method untuk generate multiple surat berdasarkan jenis layanan
+    public function generateMultiplePdf(Request $request)
+    {
+        \Log::info('=== MULTIPLE PDF GENERATION STARTED ===', [
+            'request_data' => $request->all(),
+            'memory_usage' => memory_get_usage(true) / 1024 / 1024 . ' MB',
+            'is_debug' => $request->header('Accept') === 'application/json'
+        ]);
+
+        try {
+            $jenisPelayananId = $request->input('jenis_pelayanan_id');
+            $selectedKategoriIds = $request->input('kategori_ids', []);
+            $formData = $request->all();
+            $outputType = $request->input('output_type', 'zip'); // 'zip' or 'combined'
+            $isDebugMode = $request->wantsJson() || $request->input('debug') === '1';
+
+            \Log::info('Request validation', [
+                'jenis_pelayanan_id' => $jenisPelayananId,
+                'selected_kategori_ids' => $selectedKategoriIds,
+                'output_type' => $outputType,
+                'form_data_keys' => array_keys($formData),
+                'is_debug_mode' => $isDebugMode
+            ]);
+
+            if (!$jenisPelayananId) {
+                \Log::error('Jenis pelayanan ID missing');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jenis pelayanan harus dipilih'
+                ], 400);
+            }
+
+            // Ambil semua kategori surat untuk jenis layanan ini
+            $kategoriList = KategoriSurat::where('jenis_pelayanan_id', $jenisPelayananId)
+                ->where('tipe_surat', 'layanan')
+                ->get();
+
+            \Log::info('Kategori surat loaded', [
+                'kategori_count' => $kategoriList->count(),
+                'kategori_ids' => $kategoriList->pluck('id')->toArray()
+            ]);
+
+            if ($kategoriList->isEmpty()) {
+                \Log::error('No kategori surat found');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada kategori surat untuk jenis layanan ini'
+                ], 404);
+            }
+
+            // Filter kategori yang dipilih jika ada
+            if (!empty($selectedKategoriIds)) {
+                $kategoriList = $kategoriList->whereIn('id', $selectedKategoriIds);
+                \Log::info('Filtered kategori surat', [
+                    'filtered_count' => $kategoriList->count(),
+                    'selected_ids' => $selectedKategoriIds
+                ]);
+            }
+
+            if ($kategoriList->isEmpty()) {
+                \Log::error('No valid kategori surat after filtering');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kategori surat yang dipilih tidak valid'
+                ], 404);
+            }
+
+            // If debug mode, return debug info instead of generating PDF
+            if ($isDebugMode) {
+                \Log::info('Debug mode activated, returning debug info');
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Debug mode - PDF tidak di-generate',
+                    'debug_info' => [
+                        'jenis_pelayanan_id' => $jenisPelayananId,
+                        'kategori_count' => $kategoriList->count(),
+                        'kategori_list' => $kategoriList->map(function($k) {
+                            return [
+                                'id' => $k->id,
+                                'nama' => $k->nama,
+                                'template_type' => $k->template_type,
+                                'can_generate' => $k->canGenerate()
+                            ];
+                        }),
+                        'form_data' => $formData,
+                        'output_type' => $outputType,
+                        'memory_usage' => memory_get_usage(true) / 1024 / 1024 . ' MB',
+                        'execution_time' => microtime(true) - LARAVEL_START
+                    ]
+                ]);
+            }
+
+            \Log::info('Starting PDF generation process', [
+                'final_kategori_count' => $kategoriList->count(),
+                'output_type' => $outputType,
+                'memory_before' => memory_get_usage(true) / 1024 / 1024 . ' MB'
+            ]);
+
+            if ($outputType === 'combined') {
+                \Log::info('Generating combined PDF');
+                return $this->generateCombinedPdf($kategoriList, $formData);
+            } else {
+                \Log::info('Generating zipped PDFs');
+                return $this->generateZippedPdfs($kategoriList, $formData);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Multiple PDF generation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'memory_usage' => memory_get_usage(true) / 1024 / 1024 . ' MB'
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Method untuk generate PDF gabungan
+    private function generateCombinedPdf($kategoriList, $formData)
+    {
+        $combinedHtml = '';
+        $totalGenerated = 0;
+
+        foreach ($kategoriList as $kategori) {
+            try {
+                $pdfData = $this->preparePdfData($kategori, $formData);
+                
+                if ($kategori->template_type === 'blade' && $kategori->hasBladeTemplate()) {
+                    $html = $this->generateBladeHtml($kategori, $pdfData);
+                } else {
+                    $html = $this->generateFallbackHtml($kategori, $pdfData);
+                }
+
+                if (!empty($html)) {
+                    // Add page break between documents
+                    if ($totalGenerated > 0) {
+                        $combinedHtml .= '<div style="page-break-before: always;"></div>';
+                    }
+                    $combinedHtml .= $html;
+                    $totalGenerated++;
+                }
+
+            } catch (\Exception $e) {
+                \Log::warning("Failed to generate PDF for kategori {$kategori->id}: " . $e->getMessage());
+                continue;
+            }
+        }
+
+        if (empty($combinedHtml)) {
+            throw new \Exception('Tidak ada surat yang berhasil di-generate');
+        }
+
+        // Generate combined PDF
+        $pdf = Pdf::loadHTML($combinedHtml)
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'defaultFont' => 'Times-Roman',
+                'isRemoteEnabled' => true,
+                'isHtml5ParserEnabled' => true,
+                'dpi' => 150,
+                'defaultPaperSize' => 'a4'
+            ]);
+
+        $filename = 'surat_gabungan_' . date('Y-m-d_H-i-s') . '.pdf';
+
+        return response($pdf->output())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+
+    // Method untuk generate ZIP berisi multiple PDF
+    private function generateZippedPdfs($kategoriList, $formData)
+    {
+        \Log::info('=== STARTING ZIP GENERATION ===', [
+            'kategori_count' => $kategoriList->count(),
+            'memory_usage' => memory_get_usage(true) / 1024 / 1024 . ' MB'
+        ]);
+
+        // Check if ZipArchive is available
+        if (!class_exists('ZipArchive')) {
+            \Log::error('ZipArchive class not available');
+            throw new \Exception('ZipArchive extension tidak tersedia. Gunakan opsi PDF Gabungan sebagai alternatif.');
+        }
+
+        $zip = new \ZipArchive();
+        $zipFileName = 'surat_' . date('Y-m-d_H-i-s') . '.zip';
+        $zipPath = sys_get_temp_dir() . '/' . $zipFileName;
+
+        \Log::info('Creating ZIP file', [
+            'zip_path' => $zipPath,
+            'zip_filename' => $zipFileName
+        ]);
+
+        if ($zip->open($zipPath, \ZipArchive::CREATE) !== TRUE) {
+            \Log::error('Failed to create ZIP file', ['path' => $zipPath]);
+            throw new \Exception('Tidak dapat membuat file ZIP');
+        }
+
+        $successCount = 0;
+
+        foreach ($kategoriList as $index => $kategori) {
+            \Log::info("Processing kategori {$index}: {$kategori->nama} (ID: {$kategori->id})");
+            
+            try {
+                $startTime = microtime(true);
+                $pdfContent = $this->generatePdfDocument($kategori, $formData, []);
+                $endTime = microtime(true);
+                
+                \Log::info("PDF generated for kategori {$kategori->id}", [
+                    'time_taken' => round($endTime - $startTime, 2) . ' seconds',
+                    'content_size' => strlen($pdfContent) . ' bytes'
+                ]);
+                
+                if (!empty($pdfContent)) {
+                    $pdfFileName = $this->sanitizeFileName($kategori->nama) . '.pdf';
+                    $zip->addFromString($pdfFileName, $pdfContent);
+                    $successCount++;
+                    
+                    \Log::info("Added PDF to ZIP: {$pdfFileName}");
+                } else {
+                    \Log::warning("Empty PDF content for kategori {$kategori->id}");
+                }
+
+            } catch (\Exception $e) {
+                \Log::warning("Failed to generate PDF for kategori {$kategori->id}: " . $e->getMessage());
+                continue;
+            }
+        }
+
+        \Log::info('Closing ZIP file', [
+            'success_count' => $successCount,
+            'total_processed' => $kategoriList->count()
+        ]);
+
+        $zip->close();
+
+        if ($successCount === 0) {
+            if (file_exists($zipPath)) {
+                unlink($zipPath);
+            }
+            \Log::error('No PDFs generated successfully');
+            throw new \Exception('Tidak ada surat yang berhasil di-generate');
+        }
+
+        // Read ZIP content
+        \Log::info('Reading ZIP content for download');
+        $zipContent = file_get_contents($zipPath);
+        
+        \Log::info('ZIP file generated successfully', [
+            'final_size' => strlen($zipContent) . ' bytes',
+            'success_count' => $successCount
+        ]);
+        
+        // Clean up temporary file
+        unlink($zipPath);
+
+        return response($zipContent)
+            ->header('Content-Type', 'application/zip')
+            ->header('Content-Disposition', 'attachment; filename="' . $zipFileName . '"')
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+
+    // Method untuk menyiapkan data PDF
+    private function preparePdfData($kategori, $formData)
+    {
+        $templateData = [
+            'kategori' => $kategori,
+            'generated_at' => now(),
+            'nomor_surat' => $this->generateNomorSurat($kategori)
+        ];
+
+        // Jika surat layanan dan ada pemohon_id, ambil data dari DUK
+        if ($kategori->isLayanan() && isset($formData['pemohon_id'])) {
+            $dukData = $kategori->getVariables($formData['pemohon_id']);
+            
+            $pelayananData = \DB::table('duk_pelayanan')
+                ->where('id', $formData['pemohon_id'])
+                ->first();
+            
+            $mergedData = $dukData;
+            
+            if ($pelayananData) {
+                $pelayananArray = (array)$pelayananData;
+                foreach ($pelayananArray as $key => $value) {
+                    if (!empty($value) || !isset($mergedData[$key])) {
+                        $mergedData[$key] = $value;
+                    }
+                }
+            }
+            
+            foreach ($formData as $key => $value) {
+                if (!empty($value) || !isset($mergedData[$key])) {
+                    $mergedData[$key] = $value;
+                }
+            }
+            
+            $templateData['data'] = $mergedData;
+        } else {
+            $templateData['data'] = $formData;
+        }
+
+        return $templateData;
+    }
+
+    // Method untuk generate HTML dari Blade template
+    private function generateBladeHtml($kategori, $templateData)
+    {
+        try {
+            return view($kategori->getBladeTemplatePath(), $templateData)->render();
+        } catch (\Exception $e) {
+            \Log::error("Blade template rendering failed for kategori {$kategori->id}: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    // Method untuk generate HTML fallback
+    private function generateFallbackHtml($kategori, $templateData)
+    {
+        $content = '<div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px;">';
+        $content .= '<h2>' . strtoupper($kategori->nama) . '</h2>';
+        $content .= '<small>Generated on ' . date('d/m/Y H:i:s') . '</small>';
+        $content .= '</div>';
+        
+        $content .= '<div style="margin: 20px 0;">';
+        
+        if (isset($templateData['data']) && is_array($templateData['data'])) {
+            foreach ($templateData['data'] as $key => $value) {
+                if (!empty($value) && !in_array($key, ['_token', 'pemohon_id', 'kategori_ids', 'jenis_pelayanan_id', 'output_type'])) {
+                    $content .= '<div style="margin: 8px 0;">';
+                    $content .= '<span style="display: inline-block; width: 150px; font-weight: normal;">' . ucfirst(str_replace('_', ' ', $key)) . '</span>';
+                    $content .= ': <span style="font-weight: bold;">' . htmlspecialchars($value) . '</span>';
+                    $content .= '</div>';
+                }
+            }
+        }
+        
+        $content .= '</div>';
+        
+        return '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>' . htmlspecialchars($kategori->nama) . '</title>
+    <style>
+        body { 
+            font-family: "Times New Roman", serif; 
+            line-height: 1.6; 
+            margin: 30px;
+            font-size: 12px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>' . $content . '</body>
+</html>';
+    }
+
+    // Method untuk sanitize nama file
+    private function sanitizeFileName($filename)
+    {
+        // Remove atau replace karakter yang tidak diinginkan
+        $sanitized = preg_replace('/[^a-zA-Z0-9._-]/', '_', $filename);
+        $sanitized = preg_replace('/_+/', '_', $sanitized); // Replace multiple underscores with single
+        $sanitized = trim($sanitized, '_'); // Remove leading/trailing underscores
+        
+        return $sanitized;
+    }
+
+    // Method untuk mendapatkan kategori surat berdasarkan jenis layanan
+    public function getKategoriByJenisLayanan(Request $request)
+    {
+        $jenisPelayananId = $request->input('jenis_pelayanan_id');
+        
+        if (!$jenisPelayananId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jenis pelayanan harus dipilih'
+            ], 400);
+        }
+
+        $kategoriList = KategoriSurat::where('jenis_pelayanan_id', $jenisPelayananId)
+            ->where('tipe_surat', 'layanan')
+            ->get(['id', 'nama', 'template_type']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $kategoriList,
+            'count' => $kategoriList->count()
+        ]);
+    }
+
+    // Method untuk mendapatkan merged variables dari semua kategori
+    public function getMergedVariables(Request $request)
+    {
+        $jenisPelayananId = $request->input('jenis_pelayanan_id');
+        $pemohonId = $request->input('pemohon_id');
+        
+        if (!$jenisPelayananId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jenis pelayanan harus dipilih'
+            ], 400);
+        }
+
+        // Ambil merged variables dari semua kategori
+        $mergedVariables = KategoriSurat::getMergedVariables($jenisPelayananId);
+        
+        $response = [
+            'success' => true,
+            'variables' => $mergedVariables
+        ];
+
+        // Jika ada pemohon_id, ambil data DUK untuk pre-fill
+        if ($pemohonId) {
+            $kategoriSample = KategoriSurat::where('jenis_pelayanan_id', $jenisPelayananId)
+                ->where('tipe_surat', 'layanan')
+                ->first();
+            
+            if ($kategoriSample) {
+                $dukData = $kategoriSample->getVariables($pemohonId);
+                $response['duk_data'] = $dukData;
+            }
+        }
+
+        return response()->json($response);
+    }
+
+    // Method untuk show multiple print form
+    public function showMultiplePrint()
+    {
+        $jenisLayanan = \App\Models\Layanan\JenisPelayanan::whereHas('kategoriSurat', function($query) {
+            $query->where('tipe_surat', 'layanan');
+        })->orderBy('nama_pelayanan')->get();
+
+        return view('adm.kategori-surat.multiple-print', compact('jenisLayanan'));
+    }
+
+    // Method untuk validate multiple print requirements
+    private function validateMultiplePrintRequirements($kategoriList)
+    {
+        $errors = [];
+        $warnings = [];
+
+        foreach ($kategoriList as $kategori) {
+            if (!$kategori->canGenerate()) {
+                $errors[] = "Kategori '{$kategori->nama}' tidak memiliki template yang valid";
+            }
+
+            if ($kategori->template_type === 'blade' && !$kategori->hasBladeTemplate()) {
+                $errors[] = "Template Blade untuk '{$kategori->nama}' tidak ditemukan";
+            }
+        }
+
+        // Check for ZipArchive availability if ZIP output is requested
+        if (!class_exists('ZipArchive')) {
+            $warnings[] = "ZipArchive tidak tersedia. Hanya opsi PDF Gabungan yang dapat digunakan";
+        }
+
+        return [
+            'errors' => $errors,
+            'warnings' => $warnings,
+            'has_errors' => !empty($errors)
+        ];
+    }
+
+    // Method untuk get debug info
+    public function getMultiplePrintDebugInfo(Request $request)
+    {
+        try {
+            $jenisPelayananId = $request->input('jenis_pelayanan_id');
+            
+            if (!$jenisPelayananId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jenis pelayanan harus dipilih'
+                ], 400);
+            }
+
+            $kategoriList = KategoriSurat::where('jenis_pelayanan_id', $jenisPelayananId)
+                ->where('tipe_surat', 'layanan')
+                ->get();
+
+            $debugInfo = [
+                'jenis_pelayanan_id' => $jenisPelayananId,
+                'kategori_count' => $kategoriList->count(),
+                'categories' => [],
+                'system_info' => [
+                    'zip_available' => class_exists('ZipArchive'),
+                    'php_version' => PHP_VERSION,
+                    'laravel_version' => app()->version(),
+                    'dompdf_available' => class_exists('Barryvdh\DomPDF\Facade\Pdf'),
+                ]
+            ];
+
+            foreach ($kategoriList as $kategori) {
+                $debugInfo['categories'][] = [
+                    'id' => $kategori->id,
+                    'nama' => $kategori->nama,
+                    'template_type' => $kategori->template_type,
+                    'can_generate' => $kategori->canGenerate(),
+                    'has_blade_template' => $kategori->hasBladeTemplate(),
+                    'template_path' => $kategori->getBladeTemplatePath(),
+                    'variables_count' => count($kategori->getFormVariables())
+                ];
+            }
+
+            $validation = $this->validateMultiplePrintRequirements($kategoriList);
+            $debugInfo['validation'] = $validation;
+
+            return response()->json([
+                'success' => true,
+                'debug_info' => $debugInfo
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    }
+
+    // Method untuk mendapatkan ID pelayanan terbaru berdasarkan jenis layanan
+    public function getRecentPelayananIds($jenisLayananId)
+    {
+        try {
+            // Ambil 10 ID pelayanan terbaru untuk jenis layanan ini
+            $recentIds = \DB::table('duk_pelayanan')
+                ->where('jenis_pelayanan_id', $jenisLayananId)
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->pluck('id', 'created_at')
+                ->map(function($id, $createdAt) {
+                    return [
+                        'id' => $id,
+                        'created_at' => \Carbon\Carbon::parse($createdAt)->format('d/m/Y H:i')
+                    ];
+                })
+                ->values();
+
+            return response()->json([
+                'success' => true,
+                'data' => $recentIds,
+                'message' => 'ID pelayanan terbaru berhasil diambil'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Method untuk test multiple print functionality
+    public function testMultiplePrint(Request $request)
+    {
+        \Log::info('=== TEST MULTIPLE PRINT CALLED ===');
+        
+        try {
+            // Test basic functionality
+            $jenisLayanan = \App\Models\Layanan\JenisPelayanan::whereHas('kategoriSurat', function($query) {
+                $query->where('tipe_surat', 'layanan');
+            })->first();
+            
+            if (!$jenisLayanan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No jenis layanan with kategori surat found'
+                ]);
+            }
+            
+            $kategoriList = KategoriSurat::where('jenis_pelayanan_id', $jenisLayanan->id)
+                ->where('tipe_surat', 'layanan')
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Test successful',
+                'data' => [
+                    'jenis_layanan' => $jenisLayanan->nama_pelayanan,
+                    'kategori_count' => $kategoriList->count(),
+                    'kategori_list' => $kategoriList->pluck('nama')->toArray(),
+                    'memory_usage' => memory_get_usage(true) / 1024 / 1024 . ' MB',
+                    'php_version' => PHP_VERSION,
+                    'laravel_version' => app()->version()
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Test failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Test failed: ' . $e->getMessage()
+            ]);
+        }
     }
 } 

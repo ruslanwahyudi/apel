@@ -161,3 +161,29 @@ Route::get('produk/{id}', [ProdukController::class, 'show']);
 // Wisata API Routes  
 Route::get('wisata', [WisataController::class, 'index']);
 Route::get('wisata/{id}', [WisataController::class, 'show']);
+
+// API route untuk mendapatkan pelayanan berdasarkan jenis layanan (untuk multiple print)
+Route::get('pelayanan/by-jenis/{jenisLayananId}', function($jenisLayananId) {
+    try {
+        // Ambil data pelayanan berdasarkan jenis layanan
+        $pelayananList = \DB::table('duk_pelayanan as dp')
+            ->join('duk_jenis_pelayanan as djp', 'dp.jenis_pelayanan_id', '=', 'djp.id')
+            ->where('dp.jenis_pelayanan_id', $jenisLayananId)
+            ->where('dp.status', 'selesai') // Hanya ambil yang sudah selesai
+            ->select('dp.id', 'dp.nama', 'dp.nik', 'dp.created_at', 'djp.nama as jenis_layanan')
+            ->orderBy('dp.created_at', 'desc')
+            ->limit(100) // Batasi untuk performa
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $pelayananList,
+            'count' => $pelayananList->count()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+        ], 500);
+    }
+})->name('api.pelayanan.by-jenis');

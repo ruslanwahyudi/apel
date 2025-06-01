@@ -183,4 +183,93 @@ class KategoriSurat extends Model
         // Return empty array atau default values
         return [];
     }
+
+    // Method untuk mendapatkan semua kategori surat berdasarkan jenis layanan
+    public static function getByJenisLayanan($jenisPelayananId)
+    {
+        return self::where('jenis_pelayanan_id', $jenisPelayananId)
+            ->where('tipe_surat', 'layanan')
+            ->orderBy('nama')
+            ->get();
+    }
+
+    // Method untuk mengecek apakah jenis layanan memiliki multiple kategori surat
+    public static function hasMultipleKategori($jenisPelayananId)
+    {
+        return self::where('jenis_pelayanan_id', $jenisPelayananId)
+            ->where('tipe_surat', 'layanan')
+            ->count() > 1;
+    }
+
+    // Method untuk mendapatkan template variables yang akan digunakan dalam form
+    public function getFormVariables()
+    {
+        $variables = [];
+        
+        if ($this->template_type === 'blade' && $this->blade_template_variables) {
+            $variables = $this->blade_template_variables;
+        } elseif ($this->template_type === 'pdf' && $this->pdf_form_fields) {
+            foreach ($this->pdf_form_fields as $field) {
+                $variables[] = [
+                    'name' => $field['field_name'],
+                    'label' => $field['label'],
+                    'type' => $field['type'] ?? 'text',
+                    'required' => $field['required'] ?? false
+                ];
+            }
+        } elseif ($this->template_type === 'docx' && $this->docx_form_fields) {
+            foreach ($this->docx_form_fields as $field) {
+                $variables[] = [
+                    'name' => $field['field_name'],
+                    'label' => $field['label'],
+                    'type' => $field['type'] ?? 'text',
+                    'required' => $field['required'] ?? false
+                ];
+            }
+        } elseif ($this->template_variables) {
+            $variables = $this->template_variables;
+        }
+        
+        return $variables;
+    }
+
+    // Method untuk mendapatkan merged variables dari semua kategori dalam jenis layanan
+    public static function getMergedVariables($jenisPelayananId)
+    {
+        $kategoriList = self::getByJenisLayanan($jenisPelayananId);
+        $mergedVariables = [];
+        $variableNames = [];
+
+        foreach ($kategoriList as $kategori) {
+            $formVariables = $kategori->getFormVariables();
+            
+            foreach ($formVariables as $variable) {
+                $varName = $variable['name'];
+                
+                // Jika variabel belum ada, tambahkan
+                if (!in_array($varName, $variableNames)) {
+                    $variableNames[] = $varName;
+                    $mergedVariables[] = $variable;
+                }
+            }
+        }
+
+        return $mergedVariables;
+    }
+
+    // Method untuk mengecek apakah kategori dapat di-generate
+    public function canGenerate()
+    {
+        if ($this->template_type === 'blade') {
+            return $this->hasBladeTemplate();
+        } elseif ($this->template_type === 'pdf') {
+            return !empty($this->pdf_template_path) && !empty($this->pdf_form_fields);
+        } elseif ($this->template_type === 'docx') {
+            return !empty($this->docx_template_path) && !empty($this->docx_form_fields);
+        } elseif ($this->template_type === 'text') {
+            return !empty($this->template_surat);
+        }
+        
+        return false;
+    }
 } 

@@ -39,6 +39,14 @@ class JenisPelayanan extends Model
     }
 
     /**
+     * Get the kategori surat for this jenis pelayanan.
+     */
+    public function kategoriSurat(): HasMany
+    {
+        return $this->hasMany(\App\Models\adm\KategoriSurat::class, 'jenis_pelayanan_id');
+    }
+
+    /**
      * Get unique classifications for this service type's identity fields
      */
     public function getUniqueKlasifikasi()

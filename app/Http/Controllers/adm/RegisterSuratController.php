@@ -22,7 +22,9 @@ class RegisterSuratController extends Controller
     public function index()
     {
         if (request()->ajax()) {
-            $surat = RegisterSurat::with('kategori_surat', 'signer', 'statusSurat')->get();
+            $surat = RegisterSurat::with('kategori_surat', 'signer', 'statusSurat');
+            $surat = $surat->orderBy('id', 'desc');
+            $surat = $surat->get();
             return response()->json($surat);
         }
         return view('adm.register_surat.index');
@@ -161,17 +163,44 @@ class RegisterSuratController extends Controller
         $surat->update(['status' => 3]);
         LogTransaksi::insertLog('surat', $surat->id, 'update', 'Surat berhasil ditandatangani.');
 
-        $surat = RegisterSurat::with('layanan')->find($surat->id);
-        \Log::info('Surat: ' . $surat);
-        $layanan = $surat->layanan;
-        \Log::info('Layanan: ' . $layanan);
+        // Mencari pelayanan yang memiliki register surat ini dalam array surat_id
+        $layanan = $surat->getPelayanan();
+        
+        \Log::info('Register Surat ID: ' . $surat->id);
+        \Log::info('Layanan found: ' . ($layanan ? $layanan->id : 'null'));
+        
+        if (!$layanan) {
+            \Log::warning('No layanan found for register surat ID: ' . $surat->id);
+            // Update status pelayanan untuk surat yang sudah ditandatangani (jika ditemukan)
+            $statusSelesai = MasterOption::where(['value' => 'Selesai', 'type' => 'status_layanan'])->first();
+            if ($statusSelesai) {
+                // Coba cari pelayanan dengan cara alternatif jika perlu
+                $pelayananAlternatif = \App\Models\Layanan\Pelayanan::whereRaw(
+                    'JSON_SEARCH(surat_id, "one", ?) IS NOT NULL', 
+                    [$surat->id]
+                )->first();
+                
+                if ($pelayananAlternatif) {
+                    $pelayananAlternatif->update(['status_layanan' => $statusSelesai->id]);
+                    \Log::info('Updated pelayanan status via alternative search: ' . $pelayananAlternatif->id);
+                }
+            }
+            
+            return response()->json(['success' => true, 'message' => 'Surat berhasil ditandatangani.']);
+        }
+        
         $jenis_surat = $surat->jenis_surat;
         \Log::info('Jenis Surat: ' . $jenis_surat);
         $kategori_surat = $surat->kategori_surat;
-        \Log::info('Kategori Surat: ' . $kategori_surat);
-        // Kirim notifikasi ke user
-        $user = User::find($layanan->user_id);
-        \Log::info('User: ' . $user);
+        \Log::info('Kategori Surat: ' . ($kategori_surat ? $kategori_surat->nama : 'null'));
+        
+        // Update status pelayanan menjadi selesai setelah surat ditandatangani
+        $statusSelesai = MasterOption::where(['value' => 'Selesai', 'type' => 'status_layanan'])->first();
+        if ($statusSelesai) {
+            $layanan->update(['status_layanan' => $statusSelesai->id]);
+            \Log::info('Updated pelayanan status to Selesai: ' . $layanan->id);
+        }
+        
         // Kirim notifikasi ke user
         try {
             $notification = Notifications::create([
@@ -182,7 +211,7 @@ class RegisterSuratController extends Controller
             ]);
 
             $user = User::find($layanan->user_id);
-            \Log::info('User 2: ' . $user);
+            \Log::info('User: ' . ($user ? $user->name : 'null'));
             
             if ($user && $user->fcm_token) {
                 // Generate access token
@@ -234,7 +263,8 @@ class RegisterSuratController extends Controller
                     ]
                 ]);
 
-                \Log::info('FCM Response for layanan approval:', [
+                \Log::info('FCM Response for surat signing:', [
+                    'register_surat_id' => $surat->id,
                     'layanan_id' => $layanan->id,
                     'user_id' => $layanan->user_id,
                     'status' => $response->status(),
@@ -242,9 +272,10 @@ class RegisterSuratController extends Controller
                 ]);
             }
         } catch (\Exception $e) {
-            \Log::error('Error sending notification for layanan approval:', [
-                'layanan_id' => $layanan->id,
-                'user_id' => $layanan->user_id,
+            \Log::error('Error sending notification for surat signing:', [
+                'register_surat_id' => $surat->id,
+                'layanan_id' => $layanan ? $layanan->id : null,
+                'user_id' => $layanan ? $layanan->user_id : null,
                 'jenis_surat' => $jenis_surat,
                 'error' => $e->getMessage()
             ]);
@@ -286,11 +317,31 @@ class RegisterSuratController extends Controller
             // Load kategori surat dengan relasi
             $surat->load([
                 'kategori_surat', 
-                'signer',
-                'layanan.user',
-                'layanan.jenisPelayanan', 
-                'layanan.dataIdentitas.identitasPemohon'
+                'signer'
             ]);
+            
+            // Get pelayanan using the reliable method
+            $layanan = $surat->getPelayanan();
+            
+            // Load pelayanan relationships if layanan exists
+            if ($layanan) {
+                $layanan->load([
+                    'user',
+                    'jenisPelayanan', 
+                    'dataIdentitas.identitasPemohon'
+                ]);
+                
+                \Log::info('Print surat: Pelayanan found and loaded', [
+                    'surat_id' => $surat->id,
+                    'pelayanan_id' => $layanan->id,
+                    'surat_ids' => $layanan->surat_id,
+                    'contains_surat' => in_array($surat->id, $layanan->surat_id ?? [])
+                ]);
+            } else {
+                \Log::info('Print surat: No pelayanan found for register surat', [
+                    'surat_id' => $surat->id
+                ]);
+            }
 
             $kategoriSurat = $surat->kategori_surat;
             
@@ -307,9 +358,9 @@ class RegisterSuratController extends Controller
                 ];
 
                 // Jika ini adalah surat layanan, ambil data dari layanan
-                if ($kategoriSurat->isLayanan() && $surat->layanan) {
+                if ($kategoriSurat->isLayanan() && $layanan) {
                     // Gunakan method getVariables dari kategori surat seperti di KategoriSuratController
-                    $dukVariables = $kategoriSurat->getVariables($surat->layanan->id);
+                    $dukVariables = $kategoriSurat->getVariables($layanan->id);
                     
                     // Merge dengan data form (dalam hal ini dari register surat)
                     $formData = [
@@ -330,7 +381,7 @@ class RegisterSuratController extends Controller
                     \Log::info('Register Surat PDF: Using DUK data for layanan surat', [
                         'kategori_id' => $kategoriSurat->id,
                         'surat_id' => $surat->id,
-                        'layanan_id' => $surat->layanan->id,
+                        'layanan_id' => $layanan->id,
                         'duk_variables_count' => count($dukVariables),
                         'form_data_count' => count($formData),
                         'merged_data_count' => count($mergedData),
@@ -353,6 +404,7 @@ class RegisterSuratController extends Controller
                     \Log::info('Register Surat PDF: Using manual data for non-layanan surat', [
                         'kategori_id' => $kategoriSurat->id,
                         'surat_id' => $surat->id,
+                        'layanan_id' => $layanan ? $layanan->id : null,
                         'manual_data_count' => count($templateData['data'])
                     ]);
                 }
@@ -362,7 +414,7 @@ class RegisterSuratController extends Controller
                     'template_path' => $templatePath,
                     'kategori_surat' => $kategoriSurat->nama,
                     'is_layanan' => $kategoriSurat->isLayanan(),
-                    'has_layanan_data' => $surat->layanan ? true : false,
+                    'has_layanan_data' => $layanan ? true : false,
                     'template_data_keys' => array_keys($templateData['data'] ?? [])
                 ]);
 

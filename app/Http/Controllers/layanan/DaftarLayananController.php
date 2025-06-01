@@ -339,27 +339,83 @@ class DaftarLayananController extends Controller
         $upd = $layanan->update(['status_layanan' => $statusLayanan->id]);
         
         if($upd){
-            $no_surat = generateNoSurat();
-            $kategori_surat = KategoriSurat::where('nama', 'Layanan')->first()->id;
-            $jenis_surat = $layanan->jenisPelayanan->nama_pelayanan;
-            $perihal = $layanan->jenisPelayanan->nama_pelayanan;
-            $tanggal_surat = now();
-            $status_surat = MasterOption::where(['value' => 'Proses', 'type' => 'status_surat'])->first()->id;
-            $signed_by = User::where('role', 'Kepala Desa')->first()->id;
+            // Ambil semua kategori surat untuk jenis pelayanan ini
+            $kategori_surat_list = KategoriSurat::where('jenis_pelayanan_id', $layanan->jenis_pelayanan_id)
+                ->where('tipe_surat', 'layanan')
+                ->get();
+            
+            // Array untuk menyimpan semua surat_id yang dibuat
+            $createdSuratIds = [];
+            
+            // Jika tidak ada kategori surat khusus, gunakan kategori default "Layanan"
+            if ($kategori_surat_list->isEmpty()) {
+                $kategori_default = KategoriSurat::where('nama', 'Layanan')->first();
+                if ($kategori_default) {
+                    $no_surat = generateNoSurat();
+                    $jenis_surat = $layanan->jenisPelayanan->nama_pelayanan;
+                    $perihal = $layanan->jenisPelayanan->nama_pelayanan;
+                    $tanggal_surat = now();
+                    $status_surat = MasterOption::where(['value' => 'Proses', 'type' => 'status_surat'])->first()->id;
+                    $signed_by = User::where('role', 'Kepala Desa')->first()->id;
 
-            $ins_reg_surat = RegisterSurat::create([
-                'nomor_surat' => $no_surat,
-                'kategori_surat_id' => $kategori_surat,
-                'jenis_surat' => $jenis_surat,
-                'perihal' => $perihal,
-                'tanggal_surat' => $tanggal_surat,
-                'status' => $status_surat,
-                'signer_id' => $signed_by,
-            ]);
+                    $ins_reg_surat = RegisterSurat::create([
+                        'nomor_surat' => $no_surat,
+                        'kategori_surat_id' => $kategori_default->id,
+                        'jenis_surat' => $jenis_surat,
+                        'perihal' => $perihal,
+                        'tanggal_surat' => $tanggal_surat,
+                        'status' => $status_surat,
+                        'signer_id' => $signed_by,
+                    ]);
 
-            if($ins_reg_surat){
-                $layanan->surat_id = $ins_reg_surat->id;
+                    if($ins_reg_surat){
+                        $createdSuratIds[] = $ins_reg_surat->id;
+                    }
+                }
+            } else {
+                // Loop untuk setiap kategori surat
+                foreach ($kategori_surat_list as $kategori_surat) {
+                    $no_surat = generateNoSurat();
+                    $jenis_surat = $layanan->jenisPelayanan->nama_pelayanan . ' - ' . $kategori_surat->nama;
+                    $perihal = $kategori_surat->nama;
+                    $tanggal_surat = now();
+                    $status_surat = MasterOption::where(['value' => 'Proses', 'type' => 'status_surat'])->first()->id;
+                    $signed_by = User::where('role', 'Kepala Desa')->first()->id;
+
+                    $ins_reg_surat = RegisterSurat::create([
+                        'nomor_surat' => $no_surat,
+                        'kategori_surat_id' => $kategori_surat->id,
+                        'jenis_surat' => $jenis_surat,
+                        'perihal' => $perihal,
+                        'tanggal_surat' => $tanggal_surat,
+                        'status' => $status_surat,
+                        'signer_id' => $signed_by,
+                    ]);
+                    
+                    if($ins_reg_surat){
+                        $createdSuratIds[] = $ins_reg_surat->id;
+                    }
+                    
+                    \Log::info('Register surat created in approve', [
+                        'layanan_id' => $layanan->id,
+                        'kategori_surat_id' => $kategori_surat->id,
+                        'kategori_nama' => $kategori_surat->nama,
+                        'register_surat_id' => $ins_reg_surat->id,
+                        'nomor_surat' => $no_surat
+                    ]);
+                }
+            }
+
+            // Update layanan dengan array semua surat_id yang dibuat
+            if (!empty($createdSuratIds)) {
+                $layanan->surat_id = $createdSuratIds;
                 $layanan->save();
+                
+                \Log::info('Updated layanan with multiple surat_ids', [
+                    'layanan_id' => $layanan->id,
+                    'surat_ids' => $createdSuratIds,
+                    'count' => count($createdSuratIds)
+                ]);
             }
 
             // Kirim notifikasi ke user
@@ -722,29 +778,84 @@ class DaftarLayananController extends Controller
             // Update status
             $upd = $layanan->update(['status_layanan' => $nextStatus->id]);
             if($upd){
-                // katgori surat
-                $kategori_surat = KategoriSurat::where('jenis_pelayanan_id', $layanan->jenis_pelayanan_id)->where('tipe_surat', 'layanan')->first()->id;
-                $no_surat = generateNoSurat();
-                $jenis_surat = $layanan->jenisPelayanan->nama_pelayanan;
-                $perihal = $layanan->jenisPelayanan->nama_pelayanan;
-                $tanggal_surat = now();
-                $status_surat = MasterOption::where(['value' => 'Proses', 'type' => 'status_surat'])->first()->id;
-                $signed_by = User::where('role', 'Kepala Desa')->first()->id;
-    
-                $ins_reg_surat = RegisterSurat::create([
-                    'nomor_surat' => $no_surat,
-                    'kategori_surat_id' => $kategori_surat,
-                    'jenis_surat' => $jenis_surat,
-                    'perihal' => $perihal,
-                    'tanggal_surat' => $tanggal_surat,
-                    'status' => $status_surat,
-                    'signer_id' => $signed_by,
-                ]);
+                // Ambil semua kategori surat untuk jenis pelayanan ini
+                $kategori_surat_list = KategoriSurat::where('jenis_pelayanan_id', $layanan->jenis_pelayanan_id)
+                    ->where('tipe_surat', 'layanan')
+                    ->get();
+                
+                // Array untuk menyimpan semua surat_id yang dibuat
+                $createdSuratIds = [];
+                
+                // Jika tidak ada kategori surat khusus, gunakan kategori default "Layanan"
+                if ($kategori_surat_list->isEmpty()) {
+                    $kategori_default = KategoriSurat::where('nama', 'Layanan')->first();
+                    if ($kategori_default) {
+                        $no_surat = generateNoSurat();
+                        $jenis_surat = $layanan->jenisPelayanan->nama_pelayanan;
+                        $perihal = $layanan->jenisPelayanan->nama_pelayanan;
+                        $tanggal_surat = now();
+                        $status_surat = MasterOption::where(['value' => 'Proses', 'type' => 'status_surat'])->first()->id;
+                        $signed_by = User::where('role', 'Kepala Desa')->first()->id;
 
-                if($ins_reg_surat){
-                    $layanan->surat_id = $ins_reg_surat->id;
-                    $layanan->save();
+                        $ins_reg_surat = RegisterSurat::create([
+                            'nomor_surat' => $no_surat,
+                            'kategori_surat_id' => $kategori_default->id,
+                            'jenis_surat' => $jenis_surat,
+                            'perihal' => $perihal,
+                            'tanggal_surat' => $tanggal_surat,
+                            'status' => $status_surat,
+                            'signer_id' => $signed_by,
+                        ]);
+
+                        if($ins_reg_surat){
+                            $createdSuratIds[] = $ins_reg_surat->id;
+                        }
+                    }
+                } else {
+                    // Loop untuk setiap kategori surat
+                    foreach ($kategori_surat_list as $kategori_surat) {
+                        $no_surat = generateNoSurat();
+                        $jenis_surat = $layanan->jenisPelayanan->nama_pelayanan . ' - ' . $kategori_surat->nama;
+                        $perihal = $kategori_surat->nama;
+                        $tanggal_surat = now();
+                        $status_surat = MasterOption::where(['value' => 'Proses', 'type' => 'status_surat'])->first()->id;
+                        $signed_by = User::where('role', 'Kepala Desa')->first()->id;
+            
+                        $ins_reg_surat = RegisterSurat::create([
+                            'nomor_surat' => $no_surat,
+                            'kategori_surat_id' => $kategori_surat->id,
+                            'jenis_surat' => $jenis_surat,
+                            'perihal' => $perihal,
+                            'tanggal_surat' => $tanggal_surat,
+                            'status' => $status_surat,
+                            'signer_id' => $signed_by,
+                        ]);
+                        
+                        if($ins_reg_surat){
+                            $createdSuratIds[] = $ins_reg_surat->id;
+                        }
+                        
+                        \Log::info('Register surat created in approve', [
+                            'layanan_id' => $layanan->id,
+                            'kategori_surat_id' => $kategori_surat->id,
+                            'kategori_nama' => $kategori_surat->nama,
+                            'register_surat_id' => $ins_reg_surat->id,
+                            'nomor_surat' => $no_surat
+                        ]);
+                    }
                 }
+            }
+
+            // Update layanan dengan array semua surat_id yang dibuat
+            if (!empty($createdSuratIds)) {
+                $layanan->surat_id = $createdSuratIds;
+                $layanan->save();
+                
+                \Log::info('Updated layanan with multiple surat_ids', [
+                    'layanan_id' => $layanan->id,
+                    'surat_ids' => $createdSuratIds,
+                    'count' => count($createdSuratIds)
+                ]);
             }
 
             if (request()->ajax()) {

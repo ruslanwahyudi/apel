@@ -390,6 +390,45 @@ Route::middleware(['auth', 'role:admin,kepala'])->group(function () {
     Route::post('adm/kategori-surat/{kategori}/detect-positions', [KategoriSuratController::class, 'detectVariablePositionsApi'])->name('adm.kategori-surat.detect-positions');
     Route::post('adm/kategori-surat/{kategori}/test-replacement', [KategoriSuratController::class, 'testVariableReplacement'])->name('adm.kategori-surat.test-replacement');
     
+    // Multiple Print Routes
+    Route::get('adm/kategori-surat/multiple-print', [KategoriSuratController::class, 'showMultiplePrint'])->name('adm.kategori-surat.multiple-print');
+    Route::get('adm/kategori-surat/get-by-jenis-layanan', [KategoriSuratController::class, 'getKategoriByJenisLayanan'])->name('adm.kategori-surat.get-by-jenis-layanan');
+    Route::get('adm/kategori-surat/get-merged-variables', [KategoriSuratController::class, 'getMergedVariables'])->name('adm.kategori-surat.get-merged-variables');
+    Route::get('adm/kategori-surat/recent-pelayanan-ids/{jenisLayananId}', [KategoriSuratController::class, 'getRecentPelayananIds'])->name('adm.kategori-surat.recent-pelayanan-ids');
+    Route::post('adm/kategori-surat/generate-multiple', [KategoriSuratController::class, 'generateMultiplePdf'])->name('adm.kategori-surat.generate-multiple');
+    Route::get('adm/kategori-surat/debug-multiple-print', [KategoriSuratController::class, 'getMultiplePrintDebugInfo'])->name('adm.kategori-surat.debug-multiple-print');
+    Route::get('adm/kategori-surat/test-multiple-print', [KategoriSuratController::class, 'testMultiplePrint'])->name('adm.kategori-surat.test-multiple-print');
+    Route::post('adm/kategori-surat/mock-multiple-print', function(\Illuminate\Http\Request $request) {
+        \Log::info('Mock multiple print called', $request->all());
+        
+        // Simulate processing time
+        sleep(2);
+        
+        // Check if JSON response is requested
+        if ($request->wantsJson() || $request->header('Accept') === 'application/json') {
+            return response()->json([
+                'success' => true,
+                'message' => 'Mock debug mode - PDF tidak di-generate',
+                'debug_info' => [
+                    'jenis_pelayanan_id' => $request->input('jenis_pelayanan_id'),
+                    'kategori_count' => count($request->input('kategori_ids', [])),
+                    'form_data' => $request->all(),
+                    'memory_usage' => memory_get_usage(true) / 1024 / 1024 . ' MB',
+                    'execution_time' => 2.5,
+                    'mock_mode' => true
+                ]
+            ]);
+        }
+        
+        // Return mock ZIP response for blob requests
+        $mockContent = 'PK' . str_repeat('MOCK_ZIP_CONTENT_FOR_TESTING_PURPOSES_', 100);
+        return response($mockContent)
+            ->header('Content-Type', 'application/zip')
+            ->header('Content-Disposition', 'attachment; filename="mock_test_surat.zip"')
+            ->header('Cache-Control', 'no-cache')
+            ->header('Content-Length', strlen($mockContent));
+    })->name('adm.kategori-surat.mock-multiple-print');
+    
     // Register Surat Routes
     Route::get('adm/register-surat', [RegisterSuratController::class, 'index'])->name('adm.register_surat.index');
     Route::get('adm/register-surat/create', [RegisterSuratController::class, 'create'])->name('adm.register_surat.create');
