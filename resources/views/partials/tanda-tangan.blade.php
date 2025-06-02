@@ -104,7 +104,7 @@
         @endif
         
         {{-- Area Tanda Tangan dengan TTE QR Code --}}
-        <div style="margin: 20px 0 10px 0; position: relative; height: {{ $spacingTtd }};">
+        <div style="margin: 40px 0 10px 0; position: relative; height: {{ $spacingTtd }};">
             @if($showTte)
                 {{-- TTE Digital Signature QR Code --}}
                 <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 1;">
