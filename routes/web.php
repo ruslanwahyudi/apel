@@ -39,6 +39,7 @@ use App\Http\Controllers\KontakController;
 use App\Http\Controllers\layanan\PengajuanPenggunaController;
 use App\Http\Controllers\TestController;
 use App\Http\Controllers\layanan\KlasifikasiIdentitasPemohonController;
+use App\Http\Controllers\SuratVerificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -610,6 +611,9 @@ Route::get('/test-tte-update', function () {
 Route::get('/test-multiple-pages', function () {
     return view('test-multiple-pages');
 });
+
+// Surat verification route
+Route::get('/verify-surat/{token}', [SuratVerificationController::class, 'verify'])->name('surat.verify');
 
 
 

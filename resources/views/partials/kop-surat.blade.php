@@ -16,8 +16,8 @@
     .logo-container {
         position: absolute;
         left: 50px;
-        width: 80px;
-        height: 80px;
+        width: 120px;
+        height: 120px;
     }
     
     .logo-container img {
@@ -33,7 +33,7 @@
     }
     
     .header-title {
-        font-size: 26px;
+        font-size: 35px;
         font-weight: bold;
         line-height: 1.2;
         margin: 0;
@@ -41,14 +41,14 @@
     }
     
     .header-subtitle {
-        font-size: 20px;
+        font-size: 26px;
         font-weight: bold;
         margin: 2px 0;
         text-transform: uppercase;
     }
     
     .header-village {
-        font-size: 18px;
+        font-size: 25px;
         font-weight: bold;
         margin: 5px 0;
         text-transform: uppercase;
@@ -56,13 +56,13 @@
     }
     
     .header-address {
-        font-size: 11px;
+        font-size: 16px;
         margin: 3px 0;
         line-height: 1.3;
     }
     
     .header-website {
-        font-size: 10px;
+        font-size: 16px;
         margin: 2px 0;
     }
     
@@ -116,7 +116,7 @@
         }
         
         .header-website {
-            font-size: 9px;
+            font-size: 10px;
         }
     }
 </style>

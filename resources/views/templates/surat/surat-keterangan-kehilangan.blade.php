@@ -5,7 +5,7 @@
     <title>Surat Keterangan Kehilangan</title>
     <style>
         @page {
-            margin: 1.5cm 1.5cm 2cm 1.5cm;
+            margin: 1cm 1.5cm 1cm 1.5cm;
             size: A4;
             @bottom-center {
                 content: "Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik BSrE, Badan Siber dan Sandi Negara";
@@ -174,7 +174,7 @@
 <body>
     <div class="surat-content">
         {{-- Include Kop Surat Dynamic --}}
-        @include('partials.kop-surat-dynamic')
+        @include('partials.kop-surat')
         
         {{-- Judul Surat --}}
         <div class="judul-surat">

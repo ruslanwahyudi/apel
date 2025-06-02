@@ -5,7 +5,7 @@
     <title>{{ $kategori->nama ?? 'Surat Pengantar Pernikahan' }}</title>
     <style>
         @page {
-            margin: 0.5cm 0.5cm 0.5cm 0.5cm;
+            margin: 0.5cm 1m 0.5cm 1cm;
             size: A4;
         }
         
@@ -18,6 +18,12 @@
             color: #000;
         }
         
+        .header-section {
+            text-align: right;
+            margin-bottom: 10px;
+            font-size: 10pt;
+        }
+
         .surat-content {
             max-width: 210mm;
             margin: 0 auto;
@@ -43,7 +49,7 @@
         .isi-surat {
             text-align: justify;
             margin: 15px 0;
-            line-height: 1;
+            line-height: 0.8;
         }
         
         .isi-surat p {
@@ -125,6 +131,13 @@
     <div class="surat-content">
         {{-- Include Kop Surat --}}
         @include('partials.kop-surat')
+
+        <div class="header-section">
+            <div>Lampiran IX</div>
+            <div>Kepdirjen Bimas Islam Nomor 473 Tahun 2020</div>
+            <div>Tentang</div>
+            <div>Petunjuk Teknis Pelaksanaan Pencatatan Nikah</div>
+        </div>
             
         {{-- Judul Surat --}}
         <div class="judul-surat">

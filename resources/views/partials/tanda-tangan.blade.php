@@ -15,10 +15,13 @@
     - $customNama: nama custom (optional)
     - $customNip: NIP custom (optional)
     - $showTte: tampilkan TTE digital signature (default: true)
+    - $suratId: ID surat untuk generate QR code (optional)
 --}}
 
 @php
     use App\Models\KopSuratConfig;
+    use App\Http\Controllers\SuratVerificationController;
+    use SimpleSoftwareIO\QrCode\Facades\QrCode;
     $kopConfig = KopSuratConfig::getActiveConfig();
     
     // Set default values untuk semua parameter
@@ -30,6 +33,7 @@
     $showTempat = $showTempat ?? true;
     $showJabatan = $showJabatan ?? true;
     $showTte = $showTte ?? true;
+    $suratId = $suratId ?? null;
     
     // Set default values untuk custom parameters
     $customTempat = $customTempat ?? null;
@@ -66,7 +70,23 @@
     $nama = $customNama ?? $kopConfig->kepala_desa ?? 'SYAMSUL SE';
     $nip = $customNip ?? $kopConfig->nip_kepala_desa ?? '196020520101016';
     
-    // Path untuk TTE image
+    // Generate verification token & URL for QR code
+    $token = SuratVerificationController::generateToken($suratId);
+    $verificationUrl = SuratVerificationController::getVerificationUrl($token);
+    
+    // Generate QR code with logo in the center
+    $qrCode = QrCode::format('png')
+        ->size(180)
+        ->errorCorrection('H')
+        ->margin(1)
+        ->style('dot')
+        ->eye('circle')
+        ->color(0, 0, 0)
+        ->generate($verificationUrl);
+    
+    $qrCode = base64_encode($qrCode);
+    
+    // Path untuk TTE image (legacy fallback)
     $ttePath = public_path('assets/images/tte_kades.png');
     $tteExists = file_exists($ttePath);
 @endphp
@@ -83,14 +103,23 @@
             <div>{{ $jabatan }}</div>
         @endif
         
-        {{-- Area Tanda Tangan dengan TTE --}}
+        {{-- Area Tanda Tangan dengan TTE QR Code --}}
         <div style="margin: 20px 0 10px 0; position: relative; height: {{ $spacingTtd }};">
-            @if($showTte && $tteExists)
-                {{-- TTE Digital Signature --}}
+            @if($showTte)
+                {{-- TTE Digital Signature QR Code --}}
                 <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 1;">
-                    <img src="{{ asset('assets/images/tte_kades.png') }}" 
-                         alt="Tanda Tangan Elektronik" 
-                         style="max-width: 180px; max-height: 120px; opacity: 0.8;">
+                    <div style="position: relative; width: 180px; height: 180px;">
+                        <img src="data:image/png;base64,{{ $qrCode }}" 
+                             alt="QR Verifikasi Surat" 
+                             style="width: 180px; height: 180px;">
+                        
+                        {{-- Logo at center of QR code --}}
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 5px; border-radius: 50%; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center;">
+                            <img src="{{ asset('assets/images/logo-pamekasan.png') }}" 
+                                 alt="Logo" 
+                                 style="width: 30px; height: 30px;">
+                        </div>
+                    </div>
                 </div>
             @endif
         </div>

@@ -22,6 +22,8 @@ use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\TemplateProcessor;
 
+use App\Http\Controllers\SuratVerificationController;
+
 class KategoriSuratController extends Controller
 {
     public function index(Request $request)
@@ -925,6 +927,13 @@ class KategoriSuratController extends Controller
         }
 
         try {
+            // Generate verification token for QR code
+            $token = \App\Http\Controllers\SuratVerificationController::generateToken($kategori->id);
+            
+            // Add token to template data for QR code generation
+            $templateData['suratId'] = $kategori->id;
+            $templateData['verificationToken'] = $token;
+            
             // Generate HTML dari Blade template
             $html = view($kategori->getBladeTemplatePath(), $templateData)->render();
             
@@ -932,11 +941,12 @@ class KategoriSuratController extends Controller
                 'kategori_id' => $kategori->id,
                 'html_length' => strlen($html),
                 'template_path' => $kategori->getBladeTemplatePath(),
-                'template_data_keys' => array_keys($templateData['data'] ?? [])
+                'template_data_keys' => array_keys($templateData['data'] ?? []),
+                'verification_token' => $token
             ]);
             
             // Convert ke PDF menggunakan DomPDF dengan setting optimal
-            $pdf = Pdf::loadHTML($html)
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)
                 ->setPaper('a4', 'portrait')
                 ->setOptions([
                     'defaultFont' => 'Times-Roman',
@@ -954,8 +964,13 @@ class KategoriSuratController extends Controller
                     'debugLayoutPaddingBox' => false
                 ]);
             
-            // Returned for streaming in browser rather than forced download
+            // Get PDF output
             $pdfOutput = $pdf->output();
+            
+            // Store PDF for verification
+            \App\Http\Controllers\SuratVerificationController::storeVerificationFile($token, $pdfOutput);
+            
+            // Return PDF output for streaming in browser
             return $pdfOutput;
 
         } catch (\Exception $e) {
