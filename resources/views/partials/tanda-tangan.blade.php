@@ -111,7 +111,7 @@
                     <div style="position: relative; width: 180px; height: 180px;">
                         <img src="data:image/png;base64,{{ $qrCode }}" 
                              alt="QR Verifikasi Surat" 
-                             style="width: 180px; height: 180px;">
+                             style="width: 140px; height: 140px;">
                         
                         {{-- Logo at center of QR code --}}
                         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 5px; border-radius: 50%; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center;">
