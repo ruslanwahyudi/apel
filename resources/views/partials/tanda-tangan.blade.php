@@ -108,7 +108,7 @@
             @if($showTte)
                 {{-- TTE Digital Signature QR Code --}}
                 <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 1;">
-                    <div style="position: relative; width: 180px; height: 180px;">
+                    <div style="position: relative; width: 140px; height: 140px;">
                         <img src="data:image/png;base64,{{ $qrCode }}" 
                              alt="QR Verifikasi Surat" 
                              style="width: 140px; height: 140px;">
