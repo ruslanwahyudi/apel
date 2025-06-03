@@ -83,7 +83,8 @@ class Pelayanan extends Model
         // }
         
         // return $this->hasOne(RegisterSurat::class, 'id', 'id')->where('id', $firstSuratId);
-        return $this->hasOne(RegisterSurat::class)->whereRaw('1 = 0');
+        return $this->hasMany(RegisterSurat::class, 'id', 'id')
+                ->whereRaw('1 = 0');
     }
 
     /**
