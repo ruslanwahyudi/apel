@@ -100,7 +100,6 @@ class LayananController extends Controller
                 $query->where('pelayanan_id', $id);
             },
             'statusLayanan',
-            'surat'
         ])->findOrFail($id);
         
         return response()->json([
