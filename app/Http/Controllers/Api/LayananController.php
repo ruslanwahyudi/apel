@@ -17,6 +17,7 @@ use App\Models\User;
 use Google\Client;
 use Http;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class LayananController extends Controller
@@ -69,6 +70,9 @@ class LayananController extends Controller
 
             // Ambil data
             $layanan = $query->get();
+
+            Log::info('Layanan');
+            Log::info($layanan);
 
             return response()->json([
                 'success' => true,
