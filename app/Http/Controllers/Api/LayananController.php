@@ -29,7 +29,7 @@ class LayananController extends Controller
             $user = User::findOrFail($userId);
 
             // Query dasar dengan relasi
-            $query = Pelayanan::with(['jenisPelayanan', 'dataIdentitas', 'dokumenPengajuan', 'statusLayanan'])
+            $query = Pelayanan::with(['jenisPelayanan', 'dataIdentitas', 'dokumenPengajuan', 'statusLayanan', 'surat'])
                 ->select('*'); // Pastikan semua kolom termasuk signed_document_path diambil
 
             // Filter berdasarkan role
@@ -104,6 +104,7 @@ class LayananController extends Controller
                 $query->where('pelayanan_id', $id);
             },
             'statusLayanan',
+            'surat'
         ])->findOrFail($id);
         
         return response()->json([

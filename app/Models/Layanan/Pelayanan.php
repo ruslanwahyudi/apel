@@ -73,16 +73,17 @@ class Pelayanan extends Model
      */
     public function surat()
     {
-        if (empty($this->surat_id) || !is_array($this->surat_id)) {
-            return null;
-        }
+        // if (empty($this->surat_id) || !is_array($this->surat_id)) {
+        //     return null;
+        // }
         
-        $firstSuratId = $this->surat_id[0] ?? null;
-        if (!$firstSuratId) {
-            return null;
-        }
+        // $firstSuratId = $this->surat_id[0] ?? null;
+        // if (!$firstSuratId) {
+        //     return null;
+        // }
         
-        return $this->hasOne(RegisterSurat::class, 'id', 'id')->where('id', $firstSuratId);
+        // return $this->hasOne(RegisterSurat::class, 'id', 'id')->where('id', $firstSuratId);
+        return [];
     }
 
     /**
