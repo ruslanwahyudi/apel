@@ -63,15 +63,15 @@ class RegisterSurat extends Model
 
     public function layanan()
     {
-        // Karena surat_id sekarang adalah JSON array, kita perlu custom query
+        // Karena temp_surat_id sekarang adalah JSON array, kita perlu custom query
         return $this->hasOne(Pelayanan::class, 'id', 'id')
-            ->whereRaw('JSON_CONTAINS(surat_id, ?)', [json_encode($this->id)]);
+            ->whereRaw('JSON_CONTAINS(temp_surat_id, ?)', [json_encode($this->id)]);
     }
 
     // Helper method untuk mendapatkan pelayanan dengan cara yang lebih reliable
     public function getPelayanan()
     {
-        return Pelayanan::whereRaw('JSON_CONTAINS(surat_id, ?)', [json_encode($this->id)])->first();
+        return Pelayanan::whereRaw('JSON_CONTAINS(temp_surat_id, ?)', [json_encode($this->id)])->first();
     }
 
     public function user()

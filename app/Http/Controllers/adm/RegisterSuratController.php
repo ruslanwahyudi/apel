@@ -163,7 +163,7 @@ class RegisterSuratController extends Controller
         $surat->update(['status' => 3]);
         LogTransaksi::insertLog('surat', $surat->id, 'update', 'Surat berhasil ditandatangani.');
 
-        // Mencari pelayanan yang memiliki register surat ini dalam array surat_id
+        // Mencari pelayanan yang memiliki register surat ini dalam array temp_surat_id
         $layanan = $surat->getPelayanan();
         
         \Log::info('Register Surat ID: ' . $surat->id);
@@ -176,7 +176,7 @@ class RegisterSuratController extends Controller
             if ($statusSelesai) {
                 // Coba cari pelayanan dengan cara alternatif jika perlu
                 $pelayananAlternatif = \App\Models\Layanan\Pelayanan::whereRaw(
-                    'JSON_SEARCH(surat_id, "one", ?) IS NOT NULL', 
+                    'JSON_SEARCH(temp_surat_id, "one", ?) IS NOT NULL', 
                     [$surat->id]
                 )->first();
                 
@@ -332,18 +332,21 @@ class RegisterSuratController extends Controller
                 ]);
                 
                 \Log::info('Print surat: Pelayanan found and loaded', [
-                    'surat_id' => $surat->id,
+                    'temp_surat_id' => $surat->id,
                     'pelayanan_id' => $layanan->id,
-                    'surat_ids' => $layanan->surat_id,
-                    'contains_surat' => in_array($surat->id, $layanan->surat_id ?? [])
+                    'temp_surat_ids' => $layanan->temp_surat_id,
+                    'contains_surat' => in_array($surat->id, $layanan->temp_surat_id ?? [])
                 ]);
             } else {
                 \Log::info('Print surat: No pelayanan found for register surat', [
-                    'surat_id' => $surat->id
+                    'temp_surat_id' => $surat->id
                 ]);
             }
 
             $kategoriSurat = $surat->kategori_surat;
+
+            \Log::info('Kategori Surat: ' . ($kategoriSurat ? $kategoriSurat->nama : 'null'));
+            \Log::info('Kategori Surat: ' . ($kategoriSurat ? $kategoriSurat->hasBladeTemplate() : 'null'));
             
             // Cek apakah kategori surat memiliki template blade
             if ($kategoriSurat && $kategoriSurat->hasBladeTemplate()) {
@@ -380,7 +383,7 @@ class RegisterSuratController extends Controller
                     
                     \Log::info('Register Surat PDF: Using DUK data for layanan surat', [
                         'kategori_id' => $kategoriSurat->id,
-                        'surat_id' => $surat->id,
+                        'temp_surat_id' => $surat->id,
                         'layanan_id' => $layanan->id,
                         'duk_variables_count' => count($dukVariables),
                         'form_data_count' => count($formData),
@@ -403,14 +406,14 @@ class RegisterSuratController extends Controller
                     
                     \Log::info('Register Surat PDF: Using manual data for non-layanan surat', [
                         'kategori_id' => $kategoriSurat->id,
-                        'surat_id' => $surat->id,
+                        'temp_surat_id' => $surat->id,
                         'layanan_id' => $layanan ? $layanan->id : null,
                         'manual_data_count' => count($templateData['data'])
                     ]);
                 }
 
                 \Log::info('Print surat using blade template:', [
-                    'surat_id' => $surat->id,
+                    'temp_surat_id' => $surat->id,
                     'template_path' => $templatePath,
                     'kategori_surat' => $kategoriSurat->nama,
                     'is_layanan' => $kategoriSurat->isLayanan(),
@@ -422,7 +425,7 @@ class RegisterSuratController extends Controller
                 $html = view($templatePath, $templateData)->render();
                 
                 \Log::info('Register Surat PDF: HTML generated successfully', [
-                    'surat_id' => $surat->id,
+                    'temp_surat_id' => $surat->id,
                     'html_length' => strlen($html),
                     'template_path' => $templatePath
                 ]);
@@ -460,7 +463,7 @@ class RegisterSuratController extends Controller
                 
             } else {
                 \Log::info('Using default print template:', [
-                    'surat_id' => $surat->id,
+                    'temp_surat_id' => $surat->id,
                     'kategori_surat' => $kategoriSurat ? $kategoriSurat->nama : 'No kategori',
                     'has_blade_template' => $kategoriSurat ? $kategoriSurat->hasBladeTemplate() : false
                 ]);
@@ -475,17 +478,17 @@ class RegisterSuratController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Error in print surat:', [
-                'surat_id' => $surat->id,
+                'temp_surat_id' => $surat->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
             // Fallback ke template default jika terjadi error
-        $pdf = PDF::loadView('adm.register_surat.print', [
-            'surat' => $surat
-        ])->setPaper('a4', 'portrait');
+            $pdf = PDF::loadView('adm.register_surat.print', [
+                'surat' => $surat
+            ])->setPaper('a4', 'portrait');
 
-        return $pdf->stream('Surat_' . $surat->perihal . '.pdf');
+            return $pdf->stream('Surat_' . $surat->perihal . '.pdf');
         }
     }
 } 

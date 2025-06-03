@@ -443,7 +443,7 @@ class LayananController extends Controller
                     ->where('tipe_surat', 'layanan')
                     ->get();
                 
-                // Array untuk menyimpan semua surat_id yang dibuat
+                // Array untuk menyimpan semua temp_surat_id yang dibuat
                 $createdSuratIds = [];
                 
                 // Jika tidak ada kategori surat khusus, gunakan kategori default "Layanan"
@@ -505,9 +505,9 @@ class LayananController extends Controller
                     }
                 }
 
-                // Update layanan dengan array semua surat_id yang dibuat
+                // Update layanan dengan array semua temp_surat_id yang dibuat
                 if (!empty($createdSuratIds)) {
-                    $layanan->surat_id = $createdSuratIds;
+                    $layanan->temp_surat_id = $createdSuratIds;
                     $layanan->save();
                     
                     \Log::info('Updated layanan with multiple surat_ids', [

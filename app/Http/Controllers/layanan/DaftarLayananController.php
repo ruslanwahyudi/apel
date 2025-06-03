@@ -344,7 +344,7 @@ class DaftarLayananController extends Controller
                 ->where('tipe_surat', 'layanan')
                 ->get();
             
-            // Array untuk menyimpan semua surat_id yang dibuat
+            // Array untuk menyimpan semua temp_surat_id yang dibuat
             $createdSuratIds = [];
             
             // Jika tidak ada kategori surat khusus, gunakan kategori default "Layanan"
@@ -406,12 +406,12 @@ class DaftarLayananController extends Controller
                 }
             }
 
-            // Update layanan dengan array semua surat_id yang dibuat
+            // Update layanan dengan array semua temp_surat_id yang dibuat
             if (!empty($createdSuratIds)) {
-                $layanan->surat_id = $createdSuratIds;
+                $layanan->temp_surat_id = $createdSuratIds;
                 $layanan->save();
                 
-                \Log::info('Updated layanan with multiple surat_ids', [
+                \Log::info('Updated layanan with multiple temp_surat_ids', [
                     'layanan_id' => $layanan->id,
                     'surat_ids' => $createdSuratIds,
                     'count' => count($createdSuratIds)
@@ -783,7 +783,7 @@ class DaftarLayananController extends Controller
                     ->where('tipe_surat', 'layanan')
                     ->get();
                 
-                // Array untuk menyimpan semua surat_id yang dibuat
+                // Array untuk menyimpan semua temp_surat_id yang dibuat
                 $createdSuratIds = [];
                 
                 // Jika tidak ada kategori surat khusus, gunakan kategori default "Layanan"
@@ -846,12 +846,12 @@ class DaftarLayananController extends Controller
                 }
             }
 
-            // Update layanan dengan array semua surat_id yang dibuat
+            // Update layanan dengan array semua temp_surat_id yang dibuat
             if (!empty($createdSuratIds)) {
-                $layanan->surat_id = $createdSuratIds;
+                $layanan->temp_surat_id = $createdSuratIds;
                 $layanan->save();
                 
-                \Log::info('Updated layanan with multiple surat_ids', [
+                \Log::info('Updated layanan with multiple temp_surat_ids', [
                     'layanan_id' => $layanan->id,
                     'surat_ids' => $createdSuratIds,
                     'count' => count($createdSuratIds)

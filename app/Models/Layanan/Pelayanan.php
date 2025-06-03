@@ -19,11 +19,13 @@ class Pelayanan extends Model
         'catatan',
         'status_layanan',
         'signed_document_path',
-        'surat_id'
+        'surat_id',
+        'temp_surat_id'
     ];
 
     protected $casts = [
         'surat_id' => 'array',
+        'temp_surat_id' => 'array',
     ];
 
     /**
@@ -92,11 +94,11 @@ class Pelayanan extends Model
      */
     public function allSurat()
     {
-        if (empty($this->surat_id) || !is_array($this->surat_id)) {
+        if (empty($this->temp_surat_id) || !is_array($this->temp_surat_id)) {
             return collect();
         }
         
-        return RegisterSurat::whereIn('id', $this->surat_id)->get();
+        return RegisterSurat::whereIn('id', $this->temp_surat_id)->get();
     }
 
     /**
@@ -104,10 +106,10 @@ class Pelayanan extends Model
      */
     public function addSuratId($suratId)
     {
-        $currentIds = $this->surat_id ?? [];
+        $currentIds = $this->temp_surat_id ?? [];
         if (!in_array($suratId, $currentIds)) {
             $currentIds[] = $suratId;
-            $this->surat_id = $currentIds;
+            $this->temp_surat_id = $currentIds;
             $this->save();
         }
     }
@@ -117,11 +119,11 @@ class Pelayanan extends Model
      */
     public function removeSuratId($suratId)
     {
-        $currentIds = $this->surat_id ?? [];
+        $currentIds = $this->temp_surat_id ?? [];
         $newIds = array_filter($currentIds, function($id) use ($suratId) {
             return $id != $suratId;
         });
-        $this->surat_id = array_values($newIds); // Reindex array
+        $this->temp_surat_id = array_values($newIds); // Reindex array
         $this->save();
     }
 
@@ -130,7 +132,7 @@ class Pelayanan extends Model
      */
     public function hasSurat()
     {
-        return !empty($this->surat_id) && is_array($this->surat_id) && count($this->surat_id) > 0;
+        return !empty($this->temp_surat_id) && is_array($this->temp_surat_id) && count($this->temp_surat_id) > 0;
     }
 
     /**
@@ -138,6 +140,6 @@ class Pelayanan extends Model
      */
     public function getSuratCount()
     {
-        return is_array($this->surat_id) ? count($this->surat_id) : 0;
+        return is_array($this->temp_surat_id) ? count($this->temp_surat_id) : 0;
     }
 } 
