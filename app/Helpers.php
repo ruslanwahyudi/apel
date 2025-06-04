@@ -34,8 +34,9 @@ if (!function_exists('can')) {
         $noSuratSetting = $setting->no_surat ?? 'DESA';
         
         // Ambil jumlah total surat dari register_surat
-        $jumlahSurat = RegisterSurat::count();
-        $nomorUrut = str_pad($jumlahSurat + 1, 3, '0', STR_PAD_LEFT);
+        // $jumlahSurat = RegisterSurat::count();
+        $nomorUrut = RegisterSurat::max('urut_register');
+        $nomorUrut = str_pad($nomorUrut + 1, 3, '0', STR_PAD_LEFT);
         
         // Format bulan dan tahun
         $bulan = date('m'); // Format: 01, 02, dst
@@ -43,6 +44,12 @@ if (!function_exists('can')) {
         
         // Format final: 001/DESA/01/2025
         return "{$nomorUrut}/{$noSuratSetting}/{$bulan}/{$tahun}";
+    }
+
+    function generateUrutRegister()
+    {
+        $nomorUrut = RegisterSurat::max('urut_register');
+        return $nomorUrut;
     }
 
     

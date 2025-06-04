@@ -18,6 +18,7 @@ class RegisterSurat extends Model
 
     protected $fillable = [
         'nomor_surat',
+        'urut_register',
         'jenis_surat',
         'perihal',
         'isi_ringkas',
