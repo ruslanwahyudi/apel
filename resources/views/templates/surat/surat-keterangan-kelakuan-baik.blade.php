@@ -5,7 +5,7 @@
     <title>Surat Keterangan Kelakuan Baik</title>
     <style>
         @page {
-            margin: 1.5cm 1.5cm 2cm 1.5cm;
+            margin: 0.5cm 1.5cm 0.5cm 1.5cm;
             size: A4;
             @bottom-center {
                 content: "Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik BSrE, Badan Siber dan Sandi Negara";
