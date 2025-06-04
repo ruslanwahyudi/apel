@@ -36,6 +36,9 @@ if (!function_exists('can')) {
         // Ambil jumlah total surat dari register_surat
         // $jumlahSurat = RegisterSurat::count();
         $nomorUrut = RegisterSurat::max('urut_register');
+        if ($nomorUrut == null) {
+            $nomorUrut = 115;
+        }
         $nomorUrut = str_pad($nomorUrut + 1, 3, '0', STR_PAD_LEFT);
         
         // Format bulan dan tahun
