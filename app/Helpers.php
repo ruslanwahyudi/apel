@@ -49,6 +49,9 @@ if (!function_exists('can')) {
     function generateUrutRegister()
     {
         $nomorUrut = RegisterSurat::max('urut_register');
+        if ($nomorUrut == null) {
+            $nomorUrut = 115;
+        }
         return $nomorUrut;
     }
 
