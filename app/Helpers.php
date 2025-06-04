@@ -37,7 +37,7 @@ if (!function_exists('can')) {
         // $jumlahSurat = RegisterSurat::count();
         $nomorUrut = RegisterSurat::max('urut_register');
         if ($nomorUrut == null) {
-            $nomorUrut = 115;
+            $nomorUrut = 114;
         }
         $nomorUrut = str_pad($nomorUrut + 1, 3, '0', STR_PAD_LEFT);
         
@@ -53,7 +53,7 @@ if (!function_exists('can')) {
     {
         $nomorUrut = RegisterSurat::max('urut_register');
         if ($nomorUrut == null) {
-            $nomorUrut = 115;
+            $nomorUrut = 114;
         }
         return $nomorUrut;
     }
