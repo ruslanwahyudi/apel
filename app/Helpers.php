@@ -55,6 +55,7 @@ if (!function_exists('can')) {
         if ($nomorUrut == null) {
             $nomorUrut = 114;
         }
+        $nomorUrut = $nomorUrut+1;
         return $nomorUrut;
     }
 
