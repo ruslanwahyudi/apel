@@ -451,6 +451,7 @@ class LayananController extends Controller
                     $kategori_default = KategoriSurat::where('nama', 'Layanan')->first();
                     if ($kategori_default) {
                         $no_surat = generateNoSurat();
+                        $urut_register = generateUrutRegister();
                         $jenis_surat = $layanan->jenisPelayanan->nama_pelayanan;
                         $perihal = $layanan->jenisPelayanan->nama_pelayanan;
                         $tanggal_surat = now();
@@ -459,6 +460,7 @@ class LayananController extends Controller
 
                         $ins_reg_surat = RegisterSurat::create([
                             'nomor_surat' => $no_surat,
+                            'urut_register' => $urut_register,  
                             'kategori_surat_id' => $kategori_default->id,
                             'jenis_surat' => $jenis_surat,
                             'perihal' => $perihal,
@@ -475,6 +477,7 @@ class LayananController extends Controller
                     // Loop untuk setiap kategori surat
                     foreach ($kategori_surat_list as $kategori_surat) {
                         $no_surat = generateNoSurat();
+                        $urut_register = generateUrutRegister();
                         $jenis_surat = $layanan->jenisPelayanan->nama_pelayanan . ' - ' . $kategori_surat->nama;
                         $perihal = $kategori_surat->nama;
                         $tanggal_surat = now();
@@ -483,6 +486,7 @@ class LayananController extends Controller
             
                         $ins_reg_surat = RegisterSurat::create([
                             'nomor_surat' => $no_surat,
+                            'urut_register' => $urut_register,
                             'kategori_surat_id' => $kategori_surat->id,
                             'jenis_surat' => $jenis_surat,
                             'perihal' => $perihal,
