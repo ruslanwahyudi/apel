@@ -262,7 +262,7 @@
                         <td>:</td>
                         <td>
                             @php
-                                $tanggalKegiatan = $data['tanggal'] ?? null;
+                                $tanggalKegiatan = $data['tanggal_pelaksanaan'] ?? null;
                                 
                                 if (!empty($tanggalKegiatan)) {
                                     try {
