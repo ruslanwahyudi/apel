@@ -277,6 +277,7 @@
                                 } else {
                                     $finalDate = '..........................................';
                                 }
+                                $finalDate = $tanggalKegiatan;
                             @endphp
                             {{ $finalDate }}
                         </td>
