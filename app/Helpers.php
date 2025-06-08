@@ -35,7 +35,7 @@ if (!function_exists('can')) {
         
         // Ambil jumlah total surat dari register_surat
         // $jumlahSurat = RegisterSurat::count();
-        $nomorUrut = RegisterSurat::max('urut_register');
+        $nomorUrut = RegisterSurat::max('urut_register')->where('deleted_at', null);
         if ($nomorUrut == null) {
             $nomorUrut = 114;
         }
@@ -51,7 +51,7 @@ if (!function_exists('can')) {
 
     function generateUrutRegister()
     {
-        $nomorUrut = RegisterSurat::max('urut_register');
+        $nomorUrut = RegisterSurat::max('urut_register')->where('deleted_at', null);
         if ($nomorUrut == null) {
             $nomorUrut = 114;
         }

@@ -222,7 +222,7 @@
                     <strong>Nomor</strong> : {{ $data['nomor'] ?? $nomor_surat ?? '..........................................' }}
                 </div>
                 <div class="nomor-info">
-                    <strong>Sifat</strong> : {{ $data['sifat'] ?? 'Kepada Yth' }}
+                    <strong>Sifat</strong> : {{ $data['sifat'] ?? 'Penting' }}
                 </div>
                 <div class="nomor-info">
                     <strong>Lampiran</strong> : {{ $data['lampiran'] ?? '1 (satu)' }}
@@ -253,7 +253,7 @@
         
         {{-- Isi Surat --}}
         <div class="isi-surat">
-            <p>Berdasarkan hasil evaluasi, koordinasi, Musyawarah dan pertimbangan bersama warga dan tokoh masyarakat sekitar maka dengan ini pemerintah desa banyupelle memohon agar aktivnya mendapatkan izin keramaian <strong>{{ $data['nama_kegiatan'] ?? 'Warga Kampung' }}</strong> dalam rangka <strong>{{ $data['nama_acara'] ?? $data['nama_egiatan'] ?? 'Nama Acara/Kegiatan' }}</strong> :</p>
+            <p>Berdasarkan hasil evaluasi, koordinasi, Musyawarah dan pertimbangan bersama warga dan tokoh masyarakat sekitar maka dengan ini pemerintah desa banyupelle memohon agar sekiranya mendapatkan izin keramaian kepada <strong>{{ $data['nama_kegiatan'] ?? 'Warga Kampung' }}</strong> dalam rangka <strong>{{ $data['nama_acara'] ?? $data['nama_egiatan'] ?? 'Nama Acara/Kegiatan' }}</strong> :</p>
             
             <div class="data-kegiatan">
                 <table>
@@ -294,7 +294,7 @@
                 </table>
             </div>
             
-            <p>Demi lancarnya dan suksesnya acara tersebut diatas maka pemerintah desa banyupelle mohon bersama personal pengamanan yang terdiri dari 2 orang dari Kepolisian (Brimob/santiman), 1 orang dari koramil (Babinsa) dan 1 orang dari keamanan (Satpol PP).</p>
+            <p>Demi lancarnya dan suksesnya acara tersebut diatas maka pemerintah desa banyupelle mohon bersama personal pengamanan yang terdiri dari 2 orang dari Kepolisian (Polsek), 1 orang dari koramil (Babinsa) dan 1 orang dari Kecamatan (Satpol PP).</p>
             
             
             
