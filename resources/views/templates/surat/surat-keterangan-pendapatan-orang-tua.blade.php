@@ -307,7 +307,7 @@
                     <tr>
                         <td>Status Perkawinan</td>
                         <td>:</td>
-                        <td>{{ $data['status_perkawinan'] ?? '................................' }}</td>
+                        <td>{{ $data['status_kawin'] ?? '................................' }}</td>
                     </tr>
                     <tr>
                         <td>Agama</td>
@@ -330,9 +330,7 @@
             <div class="keterangan-kelakuan">
                 <p>Menerangkan dengan sebenar-benarnya bahwa orang tua tersebut diatas betul-betul penduduk Desa kami dan orang tersebut tergolong ekonomi sangat rendah dengan penghasilan Rp. {{ $data['penghasilan'] ?? '................................' }} / Bulan dan menanggung {{ $data['jumlah_tanggungan'] ?? '................................' }} orang anggota keluarga.</p>
                 
-                <p>Demikian surat keterangan ini dibuat agar dapat dipergunakan Surat Keterangan 
-                Catatan Kepolisian (SKCK) sebagai syarat melamar pekerjaan serta dipergunakan sebagaimana 
-                mestinya.</p>
+                <p>Demikian surat keterangan ini dibuat agar dapat dipergunakan sebagaimana mestinya.</p>
             </div>
         </div>
         
