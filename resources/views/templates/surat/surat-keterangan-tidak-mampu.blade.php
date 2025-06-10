@@ -5,7 +5,7 @@
     <title>Surat Keterangan Tidak Mampu</title>
     <style>
         @page {
-            margin: 1.5cm 1.5cm 2cm 1.5cm;
+            margin: 0.5cm 1.5cm 0.5cm 1.5cm;
             size: A4;
         }
         
