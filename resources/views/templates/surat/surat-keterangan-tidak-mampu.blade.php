@@ -165,7 +165,7 @@
 <body>
     <div class="surat-content">
         {{-- Include Kop Surat Dynamic --}}
-        @include('partials.kop-surat-dynamic')
+        @include('partials.kop-surat')
         
         {{-- Judul Surat --}}
         <div class="judul-surat">
