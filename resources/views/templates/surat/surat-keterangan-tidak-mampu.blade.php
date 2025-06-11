@@ -224,24 +224,8 @@
                             <td>Tempat Tanggal Lahir</td>
                             <td style="text-align: center;">:</td>
                             <td>{{ $data['tempat_lahir'] ?? '_______________' }}, 
-                                @php
-                                    $tanggalLahir = $data['tanggal_lahir'] ?? null;
-                                    $isValidDate = false;
-                                    
-                                    if (!empty($tanggalLahir)) {
-                                        try {
-                                            $parsedDate = \Carbon\Carbon::parse($tanggalLahir);
-                                            $isValidDate = true;
-                                            $formattedDate = $parsedDate->format('d F Y');
-                                        } catch (\Exception $e) {
-                                            // Not a valid date, just use the raw value
-                                            $formattedDate = $tanggalLahir;
-                                        }
-                                    } else {
-                                        $formattedDate = '_______________';
-                                    }
-                                @endphp
-                                {{ $formattedDate }}
+                                
+                                {{ $data['tanggal_lahir'] ?? '_______________' }}
                             </td>
                         </tr>
                         <tr>
