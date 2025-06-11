@@ -286,7 +286,7 @@
             'width' => '550px',
             'marginTop' => '10px',
             'marginBottom' => '10px',
-            'spacingTtd' => '120px',
+            'spacingTtd' => '180px',
             'showTempat' => false,
             'showTte' => false,
             'customJabatan' => 'Camat ' . $kecamatan,
