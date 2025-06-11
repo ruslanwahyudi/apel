@@ -16,6 +16,7 @@
     - $customNip: NIP custom (optional)
     - $showTte: tampilkan TTE digital signature (default: true)
     - $suratId: ID surat untuk generate QR code (optional)
+    - $ttd_pengirim: teks tambahan di area tanda tangan (optional)
 --}}
 
 @php
@@ -44,6 +45,9 @@
     
     // Set default value untuk data array
     $data = $data ?? [];
+    
+    // Set default value untuk ttd_pengirim
+    $ttd_pengirim = $ttd_pengirim ?? null;
     
     // Determine alignment based on position
     $textAlign = 'right';
@@ -120,6 +124,13 @@
                                  style="width: 30px; height: 30px;">
                         </div>
                     </div>
+                </div>
+            @endif
+            
+            {{-- Teks ttd_pengirim --}}
+            @if($ttd_pengirim)
+                <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 10pt; color: #666;">
+                    {!! $ttd_pengirim !!}
                 </div>
             @endif
         </div>
