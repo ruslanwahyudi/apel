@@ -30,7 +30,7 @@
     $width = '500px';
     $marginTop = $marginTop ?? '40px';
     $marginBottom = $marginBottom ?? '30px';
-    $spacingTtd = '120px';
+    $spacingTtd = $spacingTtd ?? '120px';
     $showTempat = $showTempat ?? true;
     $showJabatan = $showJabatan ?? true;
     $showTte = $showTte ?? true;
