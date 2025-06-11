@@ -290,7 +290,7 @@
                 </strong> 
                 tanggal <strong>{{ $tanggalFormatted }}</strong> Bulan <strong>{{ $bulanKematian }}</strong> Tahun <strong>{{ $tahunKematian }}</strong> jam 
                 <strong>{{ $data['jam_kematian'] ?? '...............' }}</strong>
-                Wib di rumah data Dusum Pangongangan Desa Banyupelle Kecamatan Palengaan Kabupaten Pamekasan.
+                Wib di rumah duka {{ $data['tempat_kematian'] ?? '...............' }} Desa Banyupelle Kecamatan Palengaan Kabupaten Pamekasan.
                 </p>
             </div>
 

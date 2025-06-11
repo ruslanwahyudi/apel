@@ -129,7 +129,7 @@
             
             {{-- Teks ttd_pengirim --}}
             @if($ttd_pengirim)
-                <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 10pt; color: #666;">
+                <div style="position: absolute; bottom: 5px; left: 0; right: 0; text-align: center; font-size: 10pt; color: #666; width: 100%;">
                     {!! $ttd_pengirim !!}
                 </div>
             @endif
