@@ -265,7 +265,7 @@
                 <p>Bahwa orang tersebut diatas benar-benar telah meninggal dunia karena sakit pada hari 
                 <strong>
                     @php
-                        $tanggalKematian = $data['tanggal'] ?? null;
+                        $tanggalKematian = $data['tanggal_kematian'] ?? null;
                         
                         if (!empty($tanggalKematian)) {
                             try {
@@ -289,7 +289,7 @@
                     {{ $hariKematian }}
                 </strong> 
                 tanggal <strong>{{ $tanggalFormatted }}</strong> Bulan <strong>{{ $bulanKematian }}</strong> Tahun <strong>{{ $tahunKematian }}</strong> jam 
-                <strong>{{ $data['jam'] ?? '...............' }}</strong>
+                <strong>{{ $data['jam_kematian'] ?? '...............' }}</strong>
                 Wib di rumah data Dusum Pangongangan Desa Banyupelle Kecamatan Palengaan Kabupaten Pamekasan.
                 </p>
             </div>
