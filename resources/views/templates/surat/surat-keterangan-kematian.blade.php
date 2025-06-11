@@ -270,7 +270,7 @@
                         if (!empty($tanggalKematian)) {
                             try {
                                 $hariKematian = \Carbon\Carbon::parse($tanggalKematian)->locale('id')->translatedFormat('l');
-                                $tanggalFormatted = \Carbon\Carbon::parse($tanggalKematian)->locale('id')->translatedFormat('d F Y');
+                                $tanggalFormatted = \Carbon\Carbon::parse($tanggalKematian)->locale('id')->translatedFormat('d');
                                 $bulanKematian = \Carbon\Carbon::parse($tanggalKematian)->locale('id')->translatedFormat('F');
                                 $tahunKematian = \Carbon\Carbon::parse($tanggalKematian)->locale('id')->translatedFormat('Y');
                             } catch (\Exception $e) {
