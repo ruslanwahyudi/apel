@@ -292,7 +292,7 @@
             'customJabatan' => 'Camat ' . $kecamatan,
             'customNama' => $data['nama_camat'] ?? 'Muzanni, S.H, M.Si',
             'customNip' => '197006151994031008',
-            'ttd_pengirim' => $data['ttd_pengirim'] ?? null
+            'ttd_pengirim' => '${ttd_pengirim}' ?? null
         ])
     </div>
 
