@@ -308,6 +308,12 @@ class RegisterSuratController extends Controller
 
         $surat->delete();
         LogTransaksi::insertLog('surat', $surat->id, 'delete', 'Surat berhasil dihapus.');
+        // hapus semua data temp_surat_id dari layanan
+        $layanan = $surat->getPelayanan();
+        if ($layanan) {
+            $layanan->temp_surat_id = null;
+            $layanan->save();
+        }
         return response()->json(['message' => 'Surat berhasil dihapus']);
     }
 
