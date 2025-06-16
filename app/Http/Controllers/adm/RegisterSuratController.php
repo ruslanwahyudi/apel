@@ -306,7 +306,7 @@ class RegisterSuratController extends Controller
             Storage::delete('public/surat/lampiran/' . $surat->lampiran);
         }
 
-        $surat->delete();
+        $surat->forceDelete();
         LogTransaksi::insertLog('surat', $surat->id, 'delete', 'Surat berhasil dihapus.');
         // hapus semua data temp_surat_id dari layanan
         $layanan = $surat->getPelayanan();
