@@ -25,6 +25,7 @@ class RegisterSuratController extends Controller
             $surat = RegisterSurat::with('kategori_surat', 'signer', 'statusSurat');
             $surat = $surat->orderBy('id', 'desc');
             $surat = $surat->get();
+            
             return response()->json($surat);
         }
         return view('adm.register_surat.index');
@@ -154,6 +155,7 @@ class RegisterSuratController extends Controller
         ->orWhere('tujuan', 'like', '%' . $search . '%')
         ->orWhere('pengirim', 'like', '%' . $search . '%')
         ->get();
+        
         return response()->json($surat);
     }
 

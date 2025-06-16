@@ -39,6 +39,8 @@ class RegisterSurat extends Model
         'tanggal_diterima' => 'datetime',
     ];
 
+    protected $appends = ['layanan_data'];
+
     public function getLampiranUrlAttribute()
     {
         if ($this->lampiran) {
@@ -101,5 +103,20 @@ class RegisterSurat extends Model
     public function isLayananSurat()
     {
         return $this->layanan !== null;
+    }
+
+    // Accessor untuk layanan_data
+    public function getLayananDataAttribute()
+    {
+        $layanan = $this->getPelayanan();
+        if ($layanan) {
+            $layanan->load([
+                'user',
+                'jenisPelayanan', 
+                'dataIdentitas.identitasPemohon'
+            ]);
+            return $layanan;
+        }
+        return null;
     }
 } 

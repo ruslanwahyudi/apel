@@ -93,6 +93,7 @@
                                             <th style="width: 20px;">No</th>
                                             <th>Header Surat</th> 
                                             <th style="width: 20px;">Isi Surat</th>
+                                            <th>Data Layanan</th>
                                             <th>Penandatangan</th>
                                             <th>Lampiran</th>
                                             <th>Status</th>
@@ -137,12 +138,50 @@
                     method: "GET",
                     data: { search: search },
                     beforeSend: function() {
-                        $('#data-table-body').html('<tr><td colspan="3" class="text-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></td></tr>');
+                        $('#data-table-body').html('<tr><td colspan="8" class="text-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></td></tr>');
                     },
                     success: function(response) {
                         console.log(response);
                         let rows = '';
                         response.forEach((surat, index) => {
+                            // Format data layanan
+                            let dataLayanan = '-';
+                            if (surat.layanan_data) {
+                                let layananInfo = [];
+                                if (surat.layanan_data.user) {
+                                    layananInfo.push(`<strong>User:</strong> ${surat.layanan_data.user.name}`);
+                                }
+                                if (surat.layanan_data.jenis_pelayanan) {
+                                    layananInfo.push(`<strong>Jenis:</strong> ${surat.layanan_data.jenis_pelayanan.nama_pelayanan}`);
+                                }
+                                if (surat.layanan_data.data_identitas && surat.layanan_data.data_identitas.length > 0) {
+                                    // Cari field nama (bisa nama_suami, nama_istri, nama, dll)
+                                    let namaField = surat.layanan_data.data_identitas.find(item => 
+                                        item.identitas_pemohon && 
+                                        (item.identitas_pemohon.nama_field === 'nama' || 
+                                         item.identitas_pemohon.nama_field === 'nama_suami' || 
+                                         item.identitas_pemohon.nama_field === 'nama_istri' ||
+                                         item.identitas_pemohon.nama_field === 'nama_pemohon')
+                                    );
+                                    if (namaField) {
+                                        layananInfo.push(`<strong>Pemohon:</strong> ${namaField.nilai}`);
+                                    }
+                                    
+                                    // Cari field NIK (bisa nik, nik_suami, nik_istri, dll)
+                                    let nikField = surat.layanan_data.data_identitas.find(item => 
+                                        item.identitas_pemohon && 
+                                        (item.identitas_pemohon.nama_field === 'nik' || 
+                                         item.identitas_pemohon.nama_field === 'nik_suami' || 
+                                         item.identitas_pemohon.nama_field === 'nik_istri' ||
+                                         item.identitas_pemohon.nama_field === 'nik_pemohon')
+                                    );
+                                    if (nikField) {
+                                        layananInfo.push(`<strong>NIK:</strong> ${nikField.nilai}`);
+                                    }
+                                }
+                                dataLayanan = layananInfo.length > 0 ? layananInfo.join('<br>') : '-';
+                            }
+                            
                             rows += `
                                 <tr>
                                     <td>${index + 1}</td>
@@ -160,6 +199,7 @@
                                             <i class="fa fa-book"></i> Lihat
                                         </button>
                                     </td>
+                                    <td style="font-size: 12px;">${dataLayanan}</td>
                                     <td>${surat.signer ? surat.signer.name : '-'}</td>
                                     <td>
                                         ${surat.lampiran ? 
@@ -230,12 +270,50 @@
                 url: "{{ route('adm.register_surat.index') }}",
                 method: "GET",
                 beforeSend: function() {
-                    $('#data-table-body').html('<tr><td colspan="7" class="text-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></td></tr>');
+                    $('#data-table-body').html('<tr><td colspan="8" class="text-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></td></tr>');
                 },
                 success: function(response) {
                     console.log(response);
                     let rows = '';
                     response.forEach((surat, index) => {
+                        // Format data layanan
+                        let dataLayanan = '-';
+                        if (surat.layanan_data) {
+                            let layananInfo = [];
+                            if (surat.layanan_data.user) {
+                                layananInfo.push(`<strong>User:</strong> ${surat.layanan_data.user.name}`);
+                            }
+                            if (surat.layanan_data.jenis_pelayanan) {
+                                layananInfo.push(`<strong>Jenis:</strong> ${surat.layanan_data.jenis_pelayanan.nama_pelayanan}`);
+                            }
+                            if (surat.layanan_data.data_identitas && surat.layanan_data.data_identitas.length > 0) {
+                                // Cari field nama (bisa nama_suami, nama_istri, nama, dll)
+                                let namaField = surat.layanan_data.data_identitas.find(item => 
+                                    item.identitas_pemohon && 
+                                    (item.identitas_pemohon.nama_field === 'nama' || 
+                                     item.identitas_pemohon.nama_field === 'nama_suami' || 
+                                     item.identitas_pemohon.nama_field === 'nama_istri' ||
+                                     item.identitas_pemohon.nama_field === 'nama_pemohon')
+                                );
+                                if (namaField) {
+                                    layananInfo.push(`<strong>Pemohon:</strong> ${namaField.nilai}`);
+                                }
+                                
+                                // Cari field NIK (bisa nik, nik_suami, nik_istri, dll)
+                                let nikField = surat.layanan_data.data_identitas.find(item => 
+                                    item.identitas_pemohon && 
+                                    (item.identitas_pemohon.nama_field === 'nik' || 
+                                     item.identitas_pemohon.nama_field === 'nik_suami' || 
+                                     item.identitas_pemohon.nama_field === 'nik_istri' ||
+                                     item.identitas_pemohon.nama_field === 'nik_pemohon')
+                                );
+                                if (nikField) {
+                                    layananInfo.push(`<strong>NIK:</strong> ${nikField.nilai}`);
+                                }
+                            }
+                            dataLayanan = layananInfo.length > 0 ? layananInfo.join('<br>') : '-';
+                        }
+                        
                         rows += `
                             <tr>
                                 <td>${index + 1}</td>
@@ -253,6 +331,7 @@
                                         <i class="fa fa-book"></i> Lihat
                                     </button>
                                 </td>
+                                <td style="font-size: 12px;">${dataLayanan}</td>
                                 <td>${surat.signer ? surat.signer.name : '-'}</td>
                                 <td>
                                     ${surat.lampiran ? 
