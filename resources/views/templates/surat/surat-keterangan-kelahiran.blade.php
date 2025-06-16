@@ -185,7 +185,7 @@
             @endphp
             
             <p>Yang bertanda tangan dibawah ini, Kepala Desa {{ $kopConfig->desa ?? 'Banyupelle' }}, Menerangkan bahwa;</p>
-            <br>
+            <!-- <br> -->
             <p>Pada Hari ini, {{ $data['hari_lahir'] ?? '_______________' }}, tanggal {{ $data['tanggal_kelahiran'] ?? '_______________' }}, Pukul {{ $data['jam'] ?? '_______________' }} WIB, telah lahir seorang Bayi :</p>
             <div class="data-pemohon">
                 <table>
@@ -218,12 +218,6 @@
                         <td style="width: 280px;">Tempat Kelahiran</td>
                         <td>:</td>
                         <td>{{ $data['tempat_kelahiran'] ?? '_______________' }}</td>
-                    </tr>
-
-                    <tr>
-                        <td style="width: 280px;">Diberi Nama</td>
-                        <td>:</td>
-                        <td>{{ $data['nama'] ?? '_______________' }}</td>
                     </tr>
                     <tr>
                         <td style="width: 280px;">Diberi Nama</td>
@@ -306,24 +300,7 @@
         @php
             $kecamatan = $kopConfig->kecamatan ?? 'Palengaan';
         @endphp
-        <div style="text-align: center;">
-            <div style="margin-bottom: 10px;">
-                Mengetahui,
-            </div>
-        </div>
-        @include('partials.tanda-tangan', [
-            'position' => 'center',
-            'width' => '550px',
-            'marginTop' => '10px',
-            'marginBottom' => '10px',
-            'spacingTtd' => '180px',
-            'showTempat' => false,
-            'showTte' => false,
-            'customJabatan' => 'Camat ' . $kecamatan,
-            'customNama' => $data['nama_camat'] ?? 'Muzanni, S.H, M.Si',
-            'customNip' => '197006151994031008',
-            'ttd_pengirim' => '${ttd_pengirim}' ?? null
-        ])
+        
     </div>
 
     {{-- Fallback Footer --}}
