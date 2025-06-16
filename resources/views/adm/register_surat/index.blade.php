@@ -155,26 +155,38 @@
                                     layananInfo.push(`<strong>Jenis:</strong> ${surat.layanan_data.jenis_pelayanan.nama_pelayanan}`);
                                 }
                                 if (surat.layanan_data.data_identitas && surat.layanan_data.data_identitas.length > 0) {
-                                    // Cari field nama (bisa nama_suami, nama_istri, nama, dll)
-                                    let namaField = surat.layanan_data.data_identitas.find(item => 
-                                        item.identitas_pemohon && 
-                                        (item.identitas_pemohon.nama_field === 'nama' || 
-                                         item.identitas_pemohon.nama_field === 'nama_suami' || 
-                                         item.identitas_pemohon.nama_field === 'nama_istri' ||
-                                         item.identitas_pemohon.nama_field === 'nama_pemohon')
-                                    );
+                                    // Prioritas field nama (urutan berdasarkan relevansi)
+                                    const namaPriorities = [
+                                        'nama', 'nama_pemohon', 'nama_anak', 'nama_bayi', 'nama_suami', 
+                                        'nama_istri', 'nama_ayah', 'nama_ibu', 'nama_ahliwaris'
+                                    ];
+                                    
+                                    let namaField = null;
+                                    for (let priority of namaPriorities) {
+                                        namaField = surat.layanan_data.data_identitas.find(item => 
+                                            item.identitas_pemohon && item.identitas_pemohon.nama_field === priority
+                                        );
+                                        if (namaField) break;
+                                    }
+                                    
                                     if (namaField) {
                                         layananInfo.push(`<strong>Pemohon:</strong> ${namaField.nilai}`);
                                     }
                                     
-                                    // Cari field NIK (bisa nik, nik_suami, nik_istri, dll)
-                                    let nikField = surat.layanan_data.data_identitas.find(item => 
-                                        item.identitas_pemohon && 
-                                        (item.identitas_pemohon.nama_field === 'nik' || 
-                                         item.identitas_pemohon.nama_field === 'nik_suami' || 
-                                         item.identitas_pemohon.nama_field === 'nik_istri' ||
-                                         item.identitas_pemohon.nama_field === 'nik_pemohon')
-                                    );
+                                    // Prioritas field NIK (urutan berdasarkan relevansi)
+                                    const nikPriorities = [
+                                        'nik', 'nik_pemohon', 'nik_anak', 'nik_bayi', 'nik_suami', 
+                                        'nik_istri', 'nik_ayah', 'nik_ibu', 'nik_ahliwaris'
+                                    ];
+                                    
+                                    let nikField = null;
+                                    for (let priority of nikPriorities) {
+                                        nikField = surat.layanan_data.data_identitas.find(item => 
+                                            item.identitas_pemohon && item.identitas_pemohon.nama_field === priority
+                                        );
+                                        if (nikField) break;
+                                    }
+                                    
                                     if (nikField) {
                                         layananInfo.push(`<strong>NIK:</strong> ${nikField.nilai}`);
                                     }
@@ -287,26 +299,38 @@
                                 layananInfo.push(`<strong>Jenis:</strong> ${surat.layanan_data.jenis_pelayanan.nama_pelayanan}`);
                             }
                             if (surat.layanan_data.data_identitas && surat.layanan_data.data_identitas.length > 0) {
-                                // Cari field nama (bisa nama_suami, nama_istri, nama, dll)
-                                let namaField = surat.layanan_data.data_identitas.find(item => 
-                                    item.identitas_pemohon && 
-                                    (item.identitas_pemohon.nama_field === 'nama' || 
-                                     item.identitas_pemohon.nama_field === 'nama_suami' || 
-                                     item.identitas_pemohon.nama_field === 'nama_istri' ||
-                                     item.identitas_pemohon.nama_field === 'nama_pemohon')
-                                );
+                                // Prioritas field nama (urutan berdasarkan relevansi)
+                                const namaPriorities = [
+                                    'nama', 'nama_pemohon', 'nama_anak', 'nama_bayi', 'nama_suami', 
+                                    'nama_istri', 'nama_ayah', 'nama_ibu', 'nama_ahliwaris'
+                                ];
+                                
+                                let namaField = null;
+                                for (let priority of namaPriorities) {
+                                    namaField = surat.layanan_data.data_identitas.find(item => 
+                                        item.identitas_pemohon && item.identitas_pemohon.nama_field === priority
+                                    );
+                                    if (namaField) break;
+                                }
+                                
                                 if (namaField) {
                                     layananInfo.push(`<strong>Pemohon:</strong> ${namaField.nilai}`);
                                 }
                                 
-                                // Cari field NIK (bisa nik, nik_suami, nik_istri, dll)
-                                let nikField = surat.layanan_data.data_identitas.find(item => 
-                                    item.identitas_pemohon && 
-                                    (item.identitas_pemohon.nama_field === 'nik' || 
-                                     item.identitas_pemohon.nama_field === 'nik_suami' || 
-                                     item.identitas_pemohon.nama_field === 'nik_istri' ||
-                                     item.identitas_pemohon.nama_field === 'nik_pemohon')
-                                );
+                                // Prioritas field NIK (urutan berdasarkan relevansi)
+                                const nikPriorities = [
+                                    'nik', 'nik_pemohon', 'nik_anak', 'nik_bayi', 'nik_suami', 
+                                    'nik_istri', 'nik_ayah', 'nik_ibu', 'nik_ahliwaris'
+                                ];
+                                
+                                let nikField = null;
+                                for (let priority of nikPriorities) {
+                                    nikField = surat.layanan_data.data_identitas.find(item => 
+                                        item.identitas_pemohon && item.identitas_pemohon.nama_field === priority
+                                    );
+                                    if (nikField) break;
+                                }
+                                
                                 if (nikField) {
                                     layananInfo.push(`<strong>NIK:</strong> ${nikField.nilai}`);
                                 }
