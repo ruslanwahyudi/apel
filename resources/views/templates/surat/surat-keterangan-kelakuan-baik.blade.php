@@ -272,9 +272,7 @@
                 selama berada di desa banyupelle yang bersangkutan berkelakuan baik dan tidak pernah melakukan 
                 perbuatan yang melanggar ketertiban dan keamanan.</p>
                 
-                <p>Demikian surat keterangan ini dibuat agar dapat dipergunakan Surat Keterangan 
-                Catatan Kepolisian (SKCK) sebagai syarat melamar pekerjaan serta dipergunakan sebagaimana 
-                mestinya.</p>
+                <p>Demikian surat keterangan ini dibuat agar dapat dipergunakan sebagaimana mestinya.</p>
             </div>
         </div>
         
