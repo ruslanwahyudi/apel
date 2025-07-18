@@ -237,7 +237,7 @@
                 </div>
             </div>
             
-            <p>Bahwa orang tersebut diatas benar-benar penduduk desa banyupelle kecamatan palengaan kabupaten pamekasan dan yang bersangkutan benar-benar wali dari anak  <strong>{{ $data['nama_anak'] ?? '_______________' }}</strong>, siswi SD/ MI <strong>{{ $data['sekolah_anak'] ?? '_______________' }}</strong>, karena kedua orang tua anak tersebut bekerja diluar <strong>{{ $data['tempat_bekerja'] ?? '_______________' }}</strong>.</p>
+            <p>Bahwa orang tersebut diatas benar-benar penduduk desa banyupelle kecamatan palengaan kabupaten pamekasan dan yang bersangkutan benar-benar wali dari anak  <strong>{{ $data['nama_anak'] ?? '_______________' }}</strong>, Siswa / Siswi <strong>{{ $data['sekolah_anak'] ?? '_______________' }}</strong>, karena kedua orang tua anak tersebut bekerja diluar <strong>{{ $data['tempat_bekerja'] ?? '_______________' }}</strong>.</p>
             
             <p>Demikian surat keterangan ini dibuat dengan sebenarnya dan dapat dipergunakan sebagaimana mestinya.</p>
         </div>
