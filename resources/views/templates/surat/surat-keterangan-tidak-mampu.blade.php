@@ -201,7 +201,7 @@
                     <tr>
                         <td style="width: 280px;">Jabatan</td>
                         <td>:</td>
-                        <td>Pj. Kepala Desa {{ $kopConfig->desa ?? 'Banyupelle' }}</td>
+                        <td>Kepala Desa {{ $kopConfig->desa ?? 'Banyupelle' }}</td>
                     </tr>
                 </table>
             </div>

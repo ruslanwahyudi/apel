@@ -186,7 +186,7 @@
                     $kopConfig = KopSuratConfig::getActiveConfig();
                     $namaKepala = $kopConfig->nama_kepala ?? 'SYAMSUL SE';
                     $nipKepala = $kopConfig->nip_kepala ?? '19760205201001 1 016';
-                    $jabatanKepala = $kopConfig->jabatan_kepala ?? 'Pj. Kepala Desa Banyupelle';
+                    $jabatanKepala = $kopConfig->jabatan_kepala ?? 'Kepala Desa Banyupelle';
                 @endphp
                 
                 <table>

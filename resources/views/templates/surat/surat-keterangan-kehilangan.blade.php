@@ -210,7 +210,7 @@
                     <tr>
                         <td>Jabatan</td>
                         <td>:</td>
-                        <td>Pj. Kepala Desa {{ $kopConfig->desa ?? 'Banyupelle' }}</td>
+                        <td>Kepala Desa {{ $kopConfig->desa ?? 'Banyupelle' }}</td>
                     </tr>
                 </table>
             </div>
@@ -259,8 +259,8 @@
 
             <div class="keterangan-kehilangan">
                 <p>Orang tersebut diatas benar-benar penduduk desa banyupelle kecamatan palengaan 
-                kabupaten pamekasan dan yang benar-benar telah kehilangan sebuat 
-                {{ $data['nama_kehilangan'] ?? '................................' }} yang diperlukan hilang perjalanan dari 
+                kabupaten pamekasan dan yang benar-benar telah kehilangan sebuah 
+                {{ $data['nama_kehilangan'] ?? '................................' }} yang diperkirakan hilang dari 
                 {{ $data['rute_dari'] ?? '................................' }} ke {{ $data['rute_sampai'] ?? '................................' }}.</p>
                 
                 <p>Demikian surat keterangan ini dibuat dengan sebenarnya dan dapat dipergunakan 

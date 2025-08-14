@@ -310,7 +310,7 @@
             'marginTop' => '30px',
             'marginBottom' => '30px',
             'spacingTtd' => '120px',
-            'customJabatan' => 'Pj. Kepala Desa Banyupelle'
+            'customJabatan' => 'Kepala Desa Banyupelle'
         ])
     </div>
 

@@ -70,7 +70,7 @@
         $tanggal = \Carbon\Carbon::now()->locale('id')->translatedFormat('j F Y');
     }
     
-    $jabatan = $customJabatan ?? "Pj. Kepala Desa " . ($kopConfig->desa ?? 'Banyupelle');
+    $jabatan = $customJabatan ?? "Kepala Desa " . ($kopConfig->desa ?? 'Banyupelle');
     $nama = $customNama ?? $kopConfig->kepala_desa ?? 'SYAMSUL SE';
     $nip = $customNip ?? $kopConfig->nip_kepala_desa ?? '196020520101016';
     
@@ -91,7 +91,7 @@
     $qrCode = base64_encode($qrCode);
     
     // Path untuk TTE image (legacy fallback)
-    $ttePath = public_path('assets/images/tte_kades.png');
+    $ttePath = public_path('assets/images/tte_kades_baru.png');
     $tteExists = file_exists($ttePath);
 @endphp
 
