@@ -12,7 +12,7 @@
         body {
             font-family: 'Times New Roman', serif;
             font-size: 12pt;
-            line-height: 1;
+            line-height: 0.5;
             color: #000;
             margin: 0;
             padding: 0;
@@ -64,7 +64,7 @@
         }
         
         .data-pemohon td:first-child {
-            width: 100px;
+            width: 200px;
         }
         
         .data-pemohon td:nth-child(2) {
