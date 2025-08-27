@@ -178,7 +178,7 @@
         
         {{-- Isi Surat --}}
         <div class="isi-surat">
-            <p>Yang bertanda tangan dibawah ini :</p>
+            <p>Yang bertanda tangan dibawah ini, Kepala Desa Banyupelle Kecamatan Palengaan Kabupaten Pamekasan menerangkan dengan sebenarnya bahwa:</p>
             
             <div class="data-pemohon">
                 @php
@@ -193,43 +193,29 @@
                     <tr>
                         <td><strong>Nama</strong></td>
                         <td>:</td>
-                        <td>{{ $namaKepala }}</td>
+                        <td>{{ $data['nama_pertama'] ?? '..........................................' }}</td>
                     </tr>
                     <tr>
                         <td><strong>NIP</strong></td>
                         <td>:</td>
-                        <td>{{ $nipKepala }}</td>
+                        <td>{{ $data['nik'] ?? '..........................................' }}</td>
                     </tr>
                     <tr>
                         <td><strong>Jabatan</strong></td>
                         <td>:</td>
-                        <td>{{ $jabatanKepala }}</td>
+                        <td>{{ $data['pekerjaan'] ?? '..........................................' }}</td>
                     </tr>
+                    <tr>
+                        <td><strong>Alamat</strong></td>
+                                <td>:</td>
+                                <td>{{ $data['alamat_pertama'] ?? '..........................................' }}</td>
+                            </tr>
                 </table>
             </div>
             
             <div class="menerangkan-section">
-                <div class="menerangkan-title">Menerangkan bahwa :</div>
+                <div class="menerangkan-title">adalah satu dengan orang yang sama :</div>
                 <div class="menerangkan-content">
-                    <div class="data-orang">
-                        <table>
-                            <tr>
-                                <td><strong>Nama</strong></td>
-                                <td>:</td>
-                                <td>{{ $data['nama_pertama'] ?? '..........................................' }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Alamat</strong></td>
-                                <td>:</td>
-                                <td>{{ $data['alamat_pertama'] ?? '..........................................' }}</td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <div class="dan-section">
-                        Dan
-                    </div>
-                    
                     <div class="data-orang">
                         <table>
                             <tr>
@@ -238,19 +224,31 @@
                                 <td>{{ $data['nama_kedua'] ?? '..........................................' }}</td>
                             </tr>
                             <tr>
-                                <td><strong>Alamat</strong></td>
-                                <td>:</td>
-                                <td>{{ $data['alamat_kedua'] ?? '..........................................' }}</td>
-                            </tr>
+                                <td><strong>NIP</strong></td>
+                                    <td>:</td>
+                                    <td>{{ $data['nik'] ?? '..........................................' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Jabatan</strong></td>
+                                    <td>:</td>
+                                    <td>{{ $data['pekerjaan'] ?? '..........................................' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Alamat</strong></td>
+                                            <td>:</td>
+                                            <td>{{ $data['alamat_pertama'] ?? '..........................................' }}</td>
+                                </tr>
                         </table>
                     </div>
+                    
+                    
                 </div>
             </div>
             
             <div class="keterangan-section">
-                <p>Nama tersebut diatas adalah benar-benar satu orang yang sama, adapun nama yang benar 
-                adalah {{ $data['nama_kedua'] ?? '..........................................' }}. Sesuai dengan bukti kepemilikan berupa: 
-                {{ $data['bukti_kepemilikan'] ?? '..........................................' }}</p>
+                <p>Dalam hal ini menerangkan bahwa yang tertera dalam Dokumen Kartu Identitas Kependudukan.
+                Nama : {{ $data['nama_pertama'] ?? '..........................................' }}, dan yang tertera di 
+                {{ $data['bukti_kepemilikan'] ?? '..........................................' }}, Nama : {{ $data['nama_kedua'] ?? '..........................................' }}, Dengan ini bahwa nama tersebut adalah benar satu orang</p>
             </div>
             
             <div class="penutup-section">
