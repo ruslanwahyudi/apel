@@ -5,7 +5,7 @@
     <title>Surat Keterangan Beda Nama</title>
     <style>
         @page {
-            margin: 1.5cm 1.5cm 2cm 1.5cm;
+            margin: 0.5cm 1.5cm 0.5cm 1.5cm;
             size: A4;
         }
         
@@ -41,7 +41,7 @@
         .isi-surat {
             text-align: justify;
             margin: 15px 0;
-            line-height: 1.8;
+            line-height: 1.4;
         }
         
         .isi-surat p {
@@ -99,7 +99,7 @@
         }
         
         .data-orang td:first-child {
-            width: 100px;
+            width: 200px;
         }
         
         .data-orang td:nth-child(2) {
