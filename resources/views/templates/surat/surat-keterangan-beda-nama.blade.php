@@ -41,7 +41,7 @@
         .isi-surat {
             text-align: justify;
             margin: 15px 0;
-            line-height: 1.4;
+            line-height: 1.8;
         }
         
         .isi-surat p {
