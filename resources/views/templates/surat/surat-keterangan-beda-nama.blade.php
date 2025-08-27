@@ -255,9 +255,9 @@
             </div>
             
             <div class="keterangan-section">
-                <p>Dalam hal ini menerangkan bahwa yang tertera dalam Dokumen Kartu Identitas Kependudukan, <br>
-                <strong>Nama : {{ $data['nama_pertama'] ?? '..........................................' }}</strong>, <br>
-                dan yang tertera di (<strong>{{ $data['bukti_kepemilikan'] ?? '..........................................' }}</strong>),<br> 
+                <p>Dalam hal ini menerangkan bahwa yang tertera dalam Dokumen Kartu Identitas Kependudukan,
+                <strong>Nama : {{ $data['nama_pertama'] ?? '..........................................' }}</strong>,
+                dan yang tertera di (<strong>{{ $data['bukti_kepemilikan'] ?? '..........................................' }}</strong>),
                 <strong>Nama : {{ $data['nama_kedua'] ?? '..........................................' }}</strong>, Dengan ini bahwa nama tersebut adalah benar satu orang</p>
             </div>
             
