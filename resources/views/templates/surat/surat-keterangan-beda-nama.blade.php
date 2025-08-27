@@ -228,7 +228,7 @@
                                     <td>{{ $data['nik'] ?? '..........................................' }}</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Jabatan</strong></td>
+                                    <td><strong>Pekerjaan</strong></td>
                                     <td>:</td>
                                     <td>{{ $data['pekerjaan'] ?? '..........................................' }}</td>
                                 </tr>
@@ -245,9 +245,10 @@
             </div>
             
             <div class="keterangan-section">
-                <p>Dalam hal ini menerangkan bahwa yang tertera dalam Dokumen Kartu Identitas Kependudukan.
-                Nama : {{ $data['nama_pertama'] ?? '..........................................' }}, dan yang tertera di 
-                {{ $data['bukti_kepemilikan'] ?? '..........................................' }}, Nama : {{ $data['nama_kedua'] ?? '..........................................' }}, Dengan ini bahwa nama tersebut adalah benar satu orang</p>
+                <p>Dalam hal ini menerangkan bahwa yang tertera dalam Dokumen Kartu Identitas Kependudukan, <br>
+                <strong>Nama : {{ $data['nama_pertama'] ?? '..........................................' }}</strong>, <br>
+                dan yang tertera di (<strong>{{ $data['bukti_kepemilikan'] ?? '..........................................' }}</strong>),<br> 
+                <strong>Nama : {{ $data['nama_kedua'] ?? '..........................................' }}</strong>, Dengan ini bahwa nama tersebut adalah benar satu orang</p>
             </div>
             
             <div class="penutup-section">
