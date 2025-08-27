@@ -77,12 +77,11 @@
         }
         
         .menerangkan-title {
-            font-weight: bold;
             margin-bottom: 10px;
         }
         
         .menerangkan-content {
-            margin-left: 40px;
+            margin-left: 20px;
         }
         
         .data-orang {
@@ -196,12 +195,12 @@
                         <td>{{ $data['nama_pertama'] ?? '..........................................' }}</td>
                     </tr>
                     <tr>
-                        <td><strong>NIP</strong></td>
+                        <td><strong>No. KTP</strong></td>
                         <td>:</td>
                         <td>{{ $data['nik'] ?? '..........................................' }}</td>
                     </tr>
                     <tr>
-                        <td><strong>Jabatan</strong></td>
+                        <td><strong>Pekerjaan</strong></td>
                         <td>:</td>
                         <td>{{ $data['pekerjaan'] ?? '..........................................' }}</td>
                     </tr>
@@ -224,7 +223,7 @@
                                 <td>{{ $data['nama_kedua'] ?? '..........................................' }}</td>
                             </tr>
                             <tr>
-                                <td><strong>NIP</strong></td>
+                                <td><strong>No. KTP</strong></td>
                                     <td>:</td>
                                     <td>{{ $data['nik'] ?? '..........................................' }}</td>
                                 </tr>
