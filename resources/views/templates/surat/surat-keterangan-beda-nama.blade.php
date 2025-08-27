@@ -200,6 +200,11 @@
                         <td>{{ $data['nik'] ?? '..........................................' }}</td>
                     </tr>
                     <tr>
+                        <td><strong>Jenis Kelamin</strong></td>
+                        <td>:</td>
+                        <td>{{ $data['jenis_kelamin'] ?? '..........................................' }}</td>
+                    </tr>
+                    <tr>
                         <td><strong>Pekerjaan</strong></td>
                         <td>:</td>
                         <td>{{ $data['pekerjaan'] ?? '..........................................' }}</td>
@@ -226,6 +231,11 @@
                                 <td><strong>No. KTP</strong></td>
                                     <td>:</td>
                                     <td>{{ $data['nik'] ?? '..........................................' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Jenis Kelamin</strong></td>
+                                    <td>:</td>
+                                    <td>{{ $data['jenis_kelamin'] ?? '..........................................' }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Pekerjaan</strong></td>
