@@ -12,7 +12,7 @@
         body {
             font-family: 'Times New Roman', serif;
             font-size: 12pt;
-            line-height: 0.5;
+            line-height: 1;
             color: #000;
             margin: 0;
             padding: 0;
