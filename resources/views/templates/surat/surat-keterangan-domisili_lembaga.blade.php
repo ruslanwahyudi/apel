@@ -175,10 +175,7 @@
             @endphp
             
             <p>Yang bertanda tangan dibawah ini, Kepala Desa Banyupelle Kecamatan Palengaan Kabupaten Pamekasan menerangkan dengan sebenarnya bahwa :</p>
-            
-
-            <p>Menerangkan dengan sebenarnya bahwa :</p>
-            
+                        
             <div class="data-pemohon">
                 <table>
                     <tr>
@@ -194,7 +191,7 @@
                 </table>
             </div>
 
-            <p>Menerangkan dengan sebenarnya bahwa nama lembaga di atas benar benar berdomisili di {{ $data['alamat'] ?? '................................' }}.</p>
+            <p>Menerangkan dengan sebenarnya bahwa nama lembaga di atas benar benar berdomisili di <strong>{{ $data['alamat'] ?? '................................' }}</strong>.</p>
             
             <p>Demikian surat keterangan ini dibuat dengan sebenarnya dan dapat 
             dipergunakan sebagaimana mestinya.</p>
