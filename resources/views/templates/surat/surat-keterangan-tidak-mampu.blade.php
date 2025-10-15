@@ -268,8 +268,8 @@
         @include('partials.tanda-tangan', [
             'position' => 'center',
             'width' => '550px',
-            'marginTop' => '10px',
-            'marginLeft' => '10px',
+            'marginTop' => '5px',
+            'marginLeft' => '20px',
             'marginBottom' => '10px',
             'spacingTtd' => '180px',
             'showTempat' => false,
