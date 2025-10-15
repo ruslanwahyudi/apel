@@ -101,9 +101,6 @@
                                             <th>Action</th>
 										</tr>
 									</thead>									
-									<tbody id="data-table-body">
-										
-									</tbody>
 									</table>
 									</div>
 
@@ -140,205 +137,54 @@
 
 			console.log('Permissions:', {canUpdate, canDelete, canPrint});
 
-			// Function untuk load data
-			function loadData() {
-				console.log('=== LOADING DATA ===');
-				
-				// Show loading
-				$('#data-table-body').html('<tr><td colspan="8" class="text-center">Memuat data...</td></tr>');
-				
-				$.ajax({
+			// Initialize DataTable with server-side processing
+			var table = $('#example4').DataTable({
+				processing: true,
+				serverSide: true,
+				ajax: {
 					url: "{{ route('adm.register_surat.index') }}",
-					method: "GET",
-					dataType: 'json',
-					cache: false, // Disable cache
-					data: { _t: Date.now() }, // Cache busting parameter
-					success: function(response) {
-						console.log('=== AJAX SUCCESS ===');
-						console.log('Response received:', response);
-						console.log('Response type:', typeof response);
-						console.log('Is array:', Array.isArray(response));
-						console.log('Length:', response ? response.length : 'null');
-						
-						// Debug: Log all status values
-						if (response && Array.isArray(response)) {
-							console.log('Status values in response:', response.map(item => ({
-								id: item.id,
-								nomor_surat: item.nomor_surat,
-								status: item.status
-							})));
-						}
-						
-						if (!response || !Array.isArray(response) || response.length === 0) {
-							$('#data-table-body').html('<tr><td colspan="8" class="text-center">Tidak ada data</td></tr>');
-							return;
-						}
-						
-						let rows = '';
-						
-						response.forEach((surat, index) => {
-							console.log(`Processing item ${index + 1}/${response.length}:`, surat.nomor_surat, 'Status:', surat.status);
-							
-							// Format data layanan dengan error handling
-							let dataLayanan = '-';
-							try {
-								if (surat.layanan_data) {
-									let layananInfo = [];
-									if (surat.layanan_data.user && surat.layanan_data.user.name) {
-										layananInfo.push(`<strong>User:</strong> ${surat.layanan_data.user.name}`);
-									}
-									if (surat.layanan_data.jenis_pelayanan && surat.layanan_data.jenis_pelayanan.nama_pelayanan) {
-										layananInfo.push(`<strong>Jenis:</strong> ${surat.layanan_data.jenis_pelayanan.nama_pelayanan}`);
-									}
-									
-									// Cari nama dan NIK dari data identitas
-									if (surat.layanan_data.data_identitas && Array.isArray(surat.layanan_data.data_identitas)) {
-										// Cari nama
-										const namaPriorities = ['nama', 'nama_pemohon', 'nama_anak', 'nama_bayi', 'nama_suami', 'nama_istri', 'nama_ayah', 'nama_ibu', 'nama_ahliwaris'];
-										let namaField = null;
-										for (let priority of namaPriorities) {
-											namaField = surat.layanan_data.data_identitas.find(item => 
-												item.identitas_pemohon && item.identitas_pemohon.nama_field === priority
-											);
-											if (namaField) break;
-										}
-										if (namaField && namaField.nilai) {
-											layananInfo.push(`<strong>Pemohon:</strong> ${namaField.nilai}`);
-										}
-										
-										// Cari NIK
-										const nikPriorities = ['nik', 'nik_pemohon', 'nik_anak', 'nik_bayi', 'nik_suami', 'nik_istri', 'nik_ayah', 'nik_ibu', 'nik_ahliwaris'];
-										let nikField = null;
-										for (let priority of nikPriorities) {
-											nikField = surat.layanan_data.data_identitas.find(item => 
-												item.identitas_pemohon && item.identitas_pemohon.nama_field === priority
-											);
-											if (nikField) break;
-										}
-										if (nikField && nikField.nilai) {
-											layananInfo.push(`<strong>NIK:</strong> ${nikField.nilai}`);
-										}
-									}
-									
-									dataLayanan = layananInfo.length > 0 ? layananInfo.join('<br>') : '-';
-								}
-							} catch (e) {
-								console.error('Error processing layanan data for item', index, ':', e);
-								dataLayanan = 'Error processing data';
-							}
-							
-							// Format tanggal dengan error handling
-							let tanggalFormatted = '-';
-							try {
-								if (surat.tanggal_surat) {
-									tanggalFormatted = new Date(surat.tanggal_surat).toLocaleDateString('id-ID', { 
-										year: 'numeric', 
-										month: 'long', 
-										day: 'numeric' 
-									});
-								}
-							} catch (e) {
-								console.error('Error formatting date:', e);
-								tanggalFormatted = surat.tanggal_surat || '-';
-							}
-							
-							// Build row HTML
-							rows += `
-								<tr>
-									<td>${index + 1}</td>
-									<td>    
-										<strong>Nomor:</strong> ${surat.nomor_surat || '-'}<br>
-										<strong>Tanggal:</strong> ${tanggalFormatted}<br>
-										<strong>Perihal:</strong> ${surat.perihal || '-'}<br>
-										<strong>Kategori:</strong> ${surat.kategori_surat ? surat.kategori_surat.nama : '-'}
-									</td>
-									<td>
-										<button type="button" class="btn btn-secondary btn-sm view-isi-surat" 
-											data-toggle="modal" 
-											data-target="#isiSuratModal" 
-											data-content="${encodeURIComponent(surat.isi_surat || '')}">
-											<i class="fa fa-book"></i> Lihat
-										</button>
-									</td>
-									<td style="font-size: 12px;">${dataLayanan}</td>
-									<td>${surat.signer ? surat.signer.name : '-'}</td>
-									<td>
-										${surat.lampiran ? 
-											`<a href="/storage/surat/lampiran/${surat.lampiran}" class="btn btn-primary btn-sm" download>
-												Lampiran <i class="fa fa-file"></i>
-											</a>` : '<span class="badge bg-secondary text-white">Tidak ada lampiran</span>'}
-									</td>
-									<td>
-										<div class="d-flex flex-column" style="gap: 0.5rem;">
-											<span class="badge ${surat.status_surat ? surat.status_surat.description : 'bg-secondary'}">
-												${surat.status_surat ? surat.status_surat.value : '-'}
-											</span> Status : ${surat.status}
-											${surat.status == '2' ? `<button class="btn btn-info btn-sm register_surat-sign" data-id="${surat.id}">Tanda Tangani <i class="fa fa-barcode"></i></button>` : ''}
-											${surat.status == '1' ? `<button class="btn btn-secondary btn-sm register_surat-approve" data-id="${surat.id}">Setujui <i class="fa fa-check"></i></button>` : ''}
-										</div>  
-									</td>
-									<td>
-										<div class="d-flex flex-column" style="gap: 0.5rem;">`;
-									
-									// Build action buttons
-									if (canUpdate && surat.status != '3') {
-										rows += `<a href="/adm/register_surat/${surat.id}/edit" class="btn btn-warning btn-sm">Edit <i class="fa fa-edit"></i></a>`;
-									}
-									if (canUpdate && surat.status == '3') {
-										rows += `<button class="btn btn-danger btn-sm register_surat-revisi" data-id="${surat.id}">Revisi <i class="fa fa-undo"></i></button>`;
-									}
-									if (canDelete && surat.status != '3') {
-										rows += `<button class="btn btn-danger btn-sm delete-register_surat" data-id="${surat.id}">Hapus <i class="fa fa-trash"></i></button>`;
-									}
-									if (canPrint && surat.status == '3') {
-										rows += `<a href="/adm/register-surat/print/${surat.id}" class="btn btn-info btn-sm" target="_blank">Print <i class="fa fa-print"></i></a>`;
-									}
-									
-									rows += `                </div>
-									</td>
-								</tr>
-							`;
-						});
-						
-						console.log('Generated rows HTML length:', rows.length);
-						console.log('Setting HTML to tbody...');
-						
-						// Force clear tbody first
-						$('#data-table-body').empty();
-						
-						// Set HTML to tbody
-						$('#data-table-body').html(rows);
-						
-						console.log('HTML set successfully');
-						console.log('Tbody children count:', $('#data-table-body').children().length);
-						
-						
-						console.log('=== DATA LOADED SUCCESSFULLY ===');
-					},
-					error: function(xhr, status, error) {
-						console.error('=== AJAX ERROR ===');
-						console.error('Status:', status);
-						console.error('Error:', error);
-						console.error('Response Text:', xhr.responseText);
-						console.error('Status Code:', xhr.status);
-						
-						$('#data-table-body').html(`<tr><td colspan="8" class="text-center text-danger">Error memuat data: ${error}</td></tr>`);
+					type: 'GET'
+				},
+				columns: [
+					{ data: 0, name: 'id', orderable: true },
+					{ data: 1, name: 'nomor_surat', orderable: true },
+					{ data: 2, name: 'isi_surat', orderable: false },
+					{ data: 3, name: 'layanan_data', orderable: false },
+					{ data: 4, name: 'signer_id', orderable: false },
+					{ data: 5, name: 'lampiran', orderable: false },
+					{ data: 6, name: 'status', orderable: true },
+					{ data: 7, name: 'action', orderable: false, searchable: false }
+				],
+				order: [[0, 'desc']],
+				pageLength: 10,
+				lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+				language: {
+					processing: "Memproses...",
+					lengthMenu: "Tampilkan _MENU_ data per halaman",
+					zeroRecords: "Data tidak ditemukan",
+					info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+					infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
+					infoFiltered: "(disaring dari _MAX_ total data)",
+					search: "Cari:",
+					paginate: {
+						first: "Pertama",
+						last: "Terakhir",
+						next: "Selanjutnya",
+						previous: "Sebelumnya"
 					}
-				});
-			}
-
-			// Load data on page load
-			console.log('Loading initial data...');
-			loadData();
+				},
+				responsive: true,
+				autoWidth: false
+			});
 
 			// Refresh button
 			$('#refreshButton').click(function() {
 				console.log('Refresh button clicked');
-				loadData();
+				table.ajax.reload();
 			});
 
 			// Event handlers for buttons
-			$('#data-table-body').on('click', '.register_surat-sign', function() {
+			$('#example4').on('click', '.register_surat-sign', function() {
 				var registerId = $(this).data('id');
 				swal({
 					title: "Yakin Untuk Tanda Tangani Surat?",
@@ -353,7 +199,7 @@
 				});
 			});
 
-			$('#data-table-body').on('click', '.register_surat-approve', function() {
+			$('#example4').on('click', '.register_surat-approve', function() {
 				var registerId = $(this).data('id');
 				swal({
 					title: "Yakin Untuk Setujui Surat?",
@@ -368,7 +214,7 @@
 				});
 			});
 
-			$('#data-table-body').on('click', '.register_surat-revisi', function() {
+			$('#example4').on('click', '.register_surat-revisi', function() {
 				var registerId = $(this).data('id');
 				swal({
 					title: "Yakin Untuk Revisi Surat?",
@@ -392,7 +238,7 @@
 				});
 			});
 
-			$('#data-table-body').on('click', '.delete-register_surat', function() {
+			$('#example4').on('click', '.delete-register_surat', function() {
 				var registerId = $(this).data('id');
 				swal({
 					title: "Apakah Anda yakin?",
@@ -433,7 +279,7 @@
 						}
 						// Delay reload untuk memastikan server sudah update
 						setTimeout(function() {
-							loadData();
+							table.ajax.reload();
 						}, 500);
 					},
 					error: function(xhr) {
@@ -466,7 +312,7 @@
 						}
 						// Delay reload untuk memastikan server sudah update
 						setTimeout(function() {
-							loadData();
+							table.ajax.reload();
 						}, 500);
 					},
 					error: function(xhr) {
@@ -546,7 +392,7 @@
 						}
 						// Delay reload untuk memastikan server sudah update
 						setTimeout(function() {
-							loadData();
+							table.ajax.reload();
 						}, 500);
 					},
 					error: function(xhr) {
@@ -555,7 +401,7 @@
 				});
 			}
 
-			$('#data-table-body').on('click', '.view-isi-surat', function() {
+			$('#example4').on('click', '.view-isi-surat', function() {
 				var content = decodeURIComponent($(this).data('content'));
 				content = content.replace(/\n/g, '<br>');
 				$('#isiSuratContent').html(content);

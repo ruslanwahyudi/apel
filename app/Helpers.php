@@ -64,5 +64,38 @@ if (!function_exists('can')) {
     
 }
 
+if (!function_exists('now_local')) {
+    /**
+     * Get current time in local timezone (Asia/Jakarta)
+     */
+    function now_local()
+    {
+        return now()->setTimezone('Asia/Jakarta');
+    }
+}
+
+if (!function_exists('format_datetime_local')) {
+    /**
+     * Format datetime to local timezone
+     */
+    function format_datetime_local($datetime, $format = 'd F Y H:i:s')
+    {
+        if (!$datetime) {
+            return null;
+        }
+        
+        return $datetime->setTimezone('Asia/Jakarta')->format($format);
+    }
+}
+
+if (!function_exists('parse_datetime_local')) {
+    /**
+     * Parse datetime string to local timezone
+     */
+    function parse_datetime_local($datetimeString)
+    {
+        return \Carbon\Carbon::parse($datetimeString)->setTimezone('Asia/Jakarta');
+    }
+}
 
 ?>

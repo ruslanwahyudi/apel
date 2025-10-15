@@ -31,12 +31,15 @@ class RegisterSurat extends Model
         'status',
         'keterangan',
         'signer_id',
-        'kategori_surat_id'
+        'kategori_surat_id',
+        'signed_pdf_path',
+        'time_signed_pdf_path'
     ];
 
     protected $casts = [
         'tanggal_surat' => 'datetime',
         'tanggal_diterima' => 'datetime',
+        'time_signed_pdf_path' => 'datetime',
     ];
 
     protected $appends = ['layanan_data'];
@@ -45,6 +48,22 @@ class RegisterSurat extends Model
     {
         if ($this->lampiran) {
             return Storage::url('surat/lampiran/' . $this->lampiran);
+        }
+        return null;
+    }
+
+    public function getSignedPdfUrlAttribute()
+    {
+        if ($this->signed_pdf_path) {
+            return Storage::url($this->signed_pdf_path);
+        }
+        return null;
+    }
+
+    public function getTimeSignedPdfPathFormattedAttribute()
+    {
+        if ($this->time_signed_pdf_path) {
+            return format_datetime_local($this->time_signed_pdf_path, 'Y-m-d H:i:s');
         }
         return null;
     }

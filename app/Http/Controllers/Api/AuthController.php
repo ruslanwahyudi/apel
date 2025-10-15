@@ -225,7 +225,7 @@ class AuthController extends Controller
 
         $pengajuan = User::with('profile', 'dusun')
                     ->where('status', 'S')
-                    ->where('dusun_id', $user->dusun_id)
+                    // ->where('dusun_id', $user->dusun_id)
                     ->get();
 
         foreach ($pengajuan as $item) {
@@ -317,7 +317,7 @@ class AuthController extends Controller
                                 ],
                                 'data' => [
                                     'notification_id' => (string)$notification->id,
-                                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
+                                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
                                 ],
                                 'android' => [
                                     'notification' => [
@@ -488,19 +488,22 @@ class AuthController extends Controller
                     ])->post('https://fcm.googleapis.com/v1/projects/'.config('services.firebase.project_id').'/messages:send', [
                         'message' => [
                             'token' => $user->fcm_token,
-                            'notification' => [
+                            // 'notification' => [
+                            //     'title' => $notification->title,
+                            //     'body' => $notification->message
+                            // ],
+                            'data' => [
+                                'notification_id' => (string)$notification->id,
+                                'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                                'route' => '/persetujuan-user',
                                 'title' => $notification->title,
                                 'body' => $notification->message
                             ],
-                            'data' => [
-                                'notification_id' => (string)$notification->id,
-                                'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
-                            ],
-                            'android' => [
-                                'notification' => [
-                                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
-                                ]
-                            ],
+                            // 'android' => [
+                            //     'notification' => [
+                            //         'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
+                            //     ]
+                            // ],
                             'apns' => [
                                 'payload' => [
                                     'aps' => [

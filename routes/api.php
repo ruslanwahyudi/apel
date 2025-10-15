@@ -95,6 +95,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('layanan', [LayananController::class, 'index']);
     
     Route::get('layanan/{id}', [LayananController::class, 'show']);
+    Route::get('layanan_old/{id}', [LayananController::class, 'showOld']);
     Route::post('layanan/store', [LayananController::class, 'store']);
     Route::post('layanan/upload-identitas', [LayananController::class, 'uploadIdentitas']);
     Route::post('layanan/upload-dokumen', [LayananController::class, 'uploadDokumen']);
@@ -102,6 +103,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('layanan/approve/{id}', [LayananController::class, 'approve']);
     Route::get('layanan/tandatangan/{id}', [LayananController::class, 'tandatangan']);
     Route::get('layanan/download-signed-document/{id}', [LayananController::class, 'downloadSignedDocument']);
+    Route::get('layanan/klasifikasi-identitas/{jenisPelayananId}', [LayananController::class, 'getKlasifikasiIdentitas']);
     Route::post('layanan/reject', [LayananController::class, 'reject']);
 
     

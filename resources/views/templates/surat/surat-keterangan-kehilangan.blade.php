@@ -280,7 +280,7 @@
     
     {{-- Fallback Footer --}}
     <div class="footer-fallback">
-        <strong>Dokumen ini telah ditandatangani secara elektronik</strong> | menggunakan sertifikat elektronik BSrE, Badan Siber dan Sandi Negara
+        <strong>Dokumen ini telah ditandatangani secara elektronik</strong> || menggunakan sertifikat elektronik BSrE, Badan Siber dan Sandi Negara
     </div>
 </body>
 </html> 

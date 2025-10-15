@@ -25,6 +25,12 @@ class DaftarLayananController extends Controller
     public function index()
     {
         if (request()->ajax()) {
+            // Check if this is a DataTables request
+            if (request()->has('draw')) {
+                return $this->getDataTablesData();
+            }
+            
+            // Fallback for non-DataTables AJAX requests
             $layanan = Pelayanan::with([
                 'user',
                 'jenisPelayanan',
@@ -32,7 +38,7 @@ class DaftarLayananController extends Controller
                 'dokumenPengajuan.syaratDokumen',
                 'status'
             ])
-            ->select('*') // Pastikan semua kolom termasuk signed_document_path diambil
+            ->select('*')
             ->orderBy('id', 'desc')
             ->get();
 
@@ -41,6 +47,159 @@ class DaftarLayananController extends Controller
 
         // Return view untuk request normal/non-ajax
         return view('layanan.daftar.index');
+    }
+
+    /**
+     * Handle DataTables server-side processing
+     */
+    private function getDataTablesData()
+    {
+        $query = Pelayanan::with([
+            'user',
+            'jenisPelayanan',
+            'dataIdentitas.identitasPemohon',
+            'dokumenPengajuan.syaratDokumen',
+            'status'
+        ]);
+
+        // Get DataTables parameters
+        $draw = request()->get('draw');
+        $start = request()->get('start', 0);
+        $length = request()->get('length', 10);
+        $searchValue = request()->get('search')['value'] ?? '';
+        $orderColumn = request()->get('order')[0]['column'] ?? 0;
+        $orderDir = request()->get('order')[0]['dir'] ?? 'desc';
+
+        // Define column mapping for ordering
+        $columns = [
+            0 => 'id',
+            1 => 'jenis_pelayanan_id',
+            2 => 'user_id',
+            3 => 'created_at',
+            4 => 'status_layanan'
+        ];
+
+        $orderColumnName = $columns[$orderColumn] ?? 'id';
+
+        // Apply search filter
+        if (!empty($searchValue)) {
+            $query->where(function($q) use ($searchValue) {
+                $q->whereHas('jenisPelayanan', function($subQ) use ($searchValue) {
+                    $subQ->where('nama_pelayanan', 'like', "%{$searchValue}%");
+                })
+                ->orWhereHas('user', function($subQ) use ($searchValue) {
+                    $subQ->where('name', 'like', "%{$searchValue}%");
+                })
+                ->orWhereHas('dataIdentitas', function($subQ) use ($searchValue) {
+                    $subQ->where('nilai', 'like', "%{$searchValue}%");
+                })
+                ->orWhere('catatan', 'like', "%{$searchValue}%");
+            });
+        }
+
+        // Get total records count
+        $totalRecords = Pelayanan::count();
+        $filteredRecords = $query->count();
+
+        // Apply ordering and pagination
+        $data = $query->orderBy($orderColumnName, $orderDir)
+                     ->offset($start)
+                     ->limit($length)
+                     ->get();
+
+        // Format data for DataTables
+        $formattedData = [];
+        foreach ($data as $index => $layanan) {
+            // Format tanggal dari created_at
+            $tanggal = $layanan->created_at->format('d F Y');
+
+            // Format data identitas menjadi list
+            $dataIdentitas = '';
+            if ($layanan->dataIdentitas && $layanan->dataIdentitas->count() > 0) {
+                $dataIdentitas = '<ul class="list-unstyled m-0">';
+                foreach ($layanan->dataIdentitas as $data) {
+                    $dataIdentitas .= '<li><small>' . 
+                        ($data->identitasPemohon ? $data->identitasPemohon->nama_field : '') . 
+                        ': <b>' . ($data->nilai ?: '-') . '</b></small></li>';
+                }
+                $dataIdentitas .= '</ul>';
+            } else {
+                $dataIdentitas = '<small>Tidak ada data identitas</small>';
+            }
+
+            // Format dokumen pengajuan menjadi list dengan preview
+            $dokumenPengajuan = '';
+            if ($layanan->dokumenPengajuan && $layanan->dokumenPengajuan->count() > 0) {
+                $dokumenPengajuan = '<ul class="list-unstyled m-0">';
+                foreach ($layanan->dokumenPengajuan as $dok) {
+                    $fullPath = url('/storage/' . $dok->path_dokumen);
+                    $dokumenPengajuan .= '<li><small>' . 
+                        $dok->syaratDokumen->nama_dokumen . 
+                        ': <b><a href="javascript:void(0)" onclick="previewDokumen(\'' . $fullPath . '\')" class="text-primary">Lihat Dokumen</a></b></small></li>';
+                }
+                $dokumenPengajuan .= '</ul>';
+            } else {
+                $dokumenPengajuan = '<small>Tidak ada dokumen</small>';
+            }
+
+            // Generate action buttons
+            $actions = '<div class="btn-group-vertical w-100" role="group">';
+            $actions .= '<button class="btn btn-info btn-sm preview-surat mb-1" data-id="' . $layanan->id . '" title="Preview Surat"><i class="fa fa-eye"></i> Preview</button>';
+            
+            if ($layanan->status && $layanan->status->value === 'Belum Diproses') {
+                $actions .= '<button class="btn btn-success btn-sm approve-layanan mb-1" data-id="' . $layanan->id . '" title="Approve Layanan"><i class="fa fa-check"></i> Approve</button>';
+            }
+            
+            if (auth()->id() === 3) {
+                $actions .= '<button class="btn btn-primary btn-sm admin-approve-layanan mb-1" data-id="' . $layanan->id . '" title="Admin Approve (+1 Status)"><i class="fa fa-arrow-up"></i> Admin Approve</button>';
+            }
+            
+            if ($layanan->status_layanan == 8 && !$layanan->signed_document_path) {
+                $actions .= '<button class="btn btn-warning btn-sm upload-signed-doc mb-1" data-id="' . $layanan->id . '" title="Upload Dokumen Ditandatangani"><i class="fa fa-upload"></i> Upload Dokumen</button>';
+            }
+            
+            if ($layanan->status_layanan == 8 && $layanan->signed_document_path) {
+                $actions .= '<button class="btn btn-primary btn-sm download-signed-doc mb-1" data-id="' . $layanan->id . '" title="Download Dokumen Ditandatangani"><i class="fa fa-download"></i> Download</button>';
+                $actions .= '<button class="btn btn-warning btn-sm replace-signed-doc mb-1" data-id="' . $layanan->id . '" title="Ganti Dokumen Ditandatangani"><i class="fa fa-refresh"></i> Ganti Dokumen</button>';
+            }
+            
+            $actions .= '<button class="btn btn-warning btn-sm edit-layanan mb-1" data-id="' . $layanan->id . '" title="Edit Layanan"><i class="fa fa-edit"></i> Edit</button>';
+            $actions .= '<button class="btn btn-danger btn-sm delete-layanan" data-id="' . $layanan->id . '" title="Hapus Layanan"><i class="fa fa-trash"></i> Hapus</button>';
+            $actions .= '</div>';
+
+            $formattedData[] = [
+                $start + $index + 1, // No
+                'Pengirim : <br><b>' . $layanan->user->name . '</b><br>' .
+                'Jenis Layanan : <br><b>' . $layanan->jenisPelayanan->nama_pelayanan . '</b><br>' .
+                'Tanggal Pengajuan : <br><b>' . $tanggal . '</b><br>',
+                $dataIdentitas,
+                $dokumenPengajuan,
+                '<span class="badge badge-' . $this->getStatusBadgeClass($layanan->status->value ?? '') . '">' . ($layanan->status->description ?? '') . '</span>',
+                $actions
+            ];
+        }
+
+        return response()->json([
+            'draw' => intval($draw),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
+            'data' => $formattedData
+        ]);
+    }
+
+    /**
+     * Get status badge class
+     */
+    private function getStatusBadgeClass($status)
+    {
+        switch ($status) {
+            case 'Belum Diproses': return 'secondary';
+            case 'Sedang Diproses': return 'warning';
+            case 'Selesai': return 'success';
+            case 'Draft': return 'light';
+            case 'Ditolak': return 'danger';
+            default: return 'info';
+        }
     }
 
     public function create()
@@ -304,6 +463,8 @@ class DaftarLayananController extends Controller
 
     public function search($search)
     {
+        // This method is kept for backward compatibility but is no longer used
+        // since DataTables handles search through server-side processing
         $layanan = Pelayanan::with([
                 'user',
                 'jenisPelayanan', 
@@ -458,19 +619,23 @@ class DaftarLayananController extends Controller
                     ])->post('https://fcm.googleapis.com/v1/projects/'.config('services.firebase.project_id').'/messages:send', [
                         'message' => [
                             'token' => $user->fcm_token,
-                            'notification' => [
+                            // 'notification' => [
+                            //     'title' => $notification->title,
+                            //     'body' => $notification->message
+                            // ],
+                            'data' => [
+                                'notification_id' => (string)$notification->id,
+                                'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                                'route' => '/service-detail',
+                                'pelayanan_id' => (string)$layanan->id, 
                                 'title' => $notification->title,
                                 'body' => $notification->message
                             ],
-                            'data' => [
-                                'notification_id' => (string)$notification->id,
-                                'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
-                            ],
-                            'android' => [
-                                'notification' => [
-                                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
-                                ]
-                            ],
+                            // 'android' => [
+                            //     'notification' => [
+                            //         'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
+                            //     ]
+                            // ],
                             'apns' => [
                                 'payload' => [
                                     'aps' => [
@@ -537,19 +702,23 @@ class DaftarLayananController extends Controller
                     ])->post('https://fcm.googleapis.com/v1/projects/'.config('services.firebase.project_id').'/messages:send', [
                         'message' => [
                             'token' => $kades->fcm_token,
-                            'notification' => [
+                            // 'notification' => [
+                            //     'title' => $notification->title,
+                            //     'body' => $notification->message
+                            // ],
+                            'data' => [
+                                'notification_id' => (string)$notification->id,
+                                'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                                'route' => '/service-detail',
+                                'pelayanan_id' => (string)$layanan->id, 
                                 'title' => $notification->title,
                                 'body' => $notification->message
                             ],
-                            'data' => [
-                                'notification_id' => (string)$notification->id,
-                                'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
-                            ],
-                            'android' => [
-                                'notification' => [
-                                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
-                                ]
-                            ],
+                            // 'android' => [
+                            //     'notification' => [
+                            //         'click_action' => 'FLUTTER_NOTIFICATION_CLICK'
+                            //     ]
+                            // ],
                             'apns' => [
                                 'payload' => [
                                     'aps' => [

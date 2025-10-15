@@ -441,6 +441,7 @@ Route::middleware(['auth', 'role:admin,kepala'])->group(function () {
     Route::get('adm/register-surat/revisi/{surat}/{description}', [RegisterSuratController::class, 'revisi'])->name('adm.register_surat.revisi');
     Route::delete('adm/register-surat/{surat}', [RegisterSuratController::class, 'destroy'])->name('adm.register_surat.destroy');
     Route::get('adm/register-surat/print/{surat}', [RegisterSuratController::class, 'print'])->name('adm.register_surat.print');
+    Route::get('adm/register-surat/download-signed-pdf/{surat}', [RegisterSuratController::class, 'downloadSignedPdf'])->name('adm.register_surat.download-signed-pdf');
     Route::get('adm/register-surat/search/{search}', [RegisterSuratController::class, 'search'])->name('adm.register_surat.search');
 
     // Log Transaksi

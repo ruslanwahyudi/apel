@@ -87,8 +87,6 @@
                                     <th style="width: 200px;">Action</th>
                                 </tr>
                             </thead>                                   
-                            <tbody id="data-table-body">
-                            </tbody>
                         </table>
                     </div>
                 </div>                          
@@ -197,8 +195,6 @@
 
 <script>
 $(document).ready(function() {
-    var table = $('#example4').DataTable();
-    
     // Setup CSRF token for AJAX requests
     $.ajaxSetup({
         headers: {
@@ -206,118 +202,43 @@ $(document).ready(function() {
         }
     });
 
-    loadDaftarLayanan();
-
-    function loadDaftarLayanan() {
-        $.ajax({
+    // Initialize DataTable with server-side processing
+    var table = $('#example4').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
             url: "{{ route('layanan.daftar') }}",
-            method: "GET",
-            beforeSend: function() {
-                $('#data-table-body').html('<tr><td colspan="6" class="text-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></td></tr>');
-            },
-            success: function(response) {
-                let rows = '';
-                response.forEach((layanan, index) => {
-                    // Format tanggal dari created_at
-                    let tanggal = new Date(layanan.created_at).toLocaleDateString('id-ID', {
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric'
-                    });
-
-                    // Format data identitas menjadi list
-                    let dataIdentitas = '';
-                    if (layanan.data_identitas && layanan.data_identitas.length > 0) {
-                        dataIdentitas = '<ul class="list-unstyled m-0">';
-                        layanan.data_identitas.forEach(data => {
-                            // Tampilkan label dari identitas_pemohon dan nilai
-                            dataIdentitas += `
-                                <li>
-                                    <small>
-                                        ${data.identitas_pemohon ? data.identitas_pemohon.nama_field : ''}: 
-                                        <b>${data.nilai || '-'}</b>
-                                    </small>
-                                </li>`;
-                        });
-                        dataIdentitas += '</ul>';
-                    } else {
-                        dataIdentitas = '<small>Tidak ada data identitas</small>';
-                    }
-
-                    // Format dokumen pengajuan menjadi list dengan preview
-                    let dokumenPengajuan = '';
-                    if (layanan.dokumen_pengajuan && layanan.dokumen_pengajuan.length > 0) {
-                        dokumenPengajuan = '<ul class="list-unstyled m-0">';
-                        layanan.dokumen_pengajuan.forEach(dok => {
-                            let fullPath = `{{ url('/storage') }}/${dok.path_dokumen}`;
-                            dokumenPengajuan += `
-                                <li>
-                                    <small>
-                                        ${dok.syarat_dokumen.nama_dokumen} :
-                                        <b><a href="javascript:void(0)" onclick="previewDokumen('${fullPath}')" class="text-primary">
-                                            Lihat Dokumen
-                                        </a></b>
-                                    </small>
-                                </li>`;
-                        });
-                        dokumenPengajuan += '</ul>';
-                    } else {
-                        dokumenPengajuan = '<small>Tidak ada dokumen</small>';
-                    }
-                    
-                    rows += `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td> Pengirim : <br><b>${layanan.user.name}</b><br>
-                                Jenis Layanan : <br><b>${layanan.jenis_pelayanan.nama_pelayanan}</b><br>
-                                Tanggal Pengajuan : <br><b>${tanggal}</b><br>
-                            </td>
-                            <td>${dataIdentitas}</td>
-                            <td>${dokumenPengajuan}</td>
-                            <td><span class="badge badge-${getStatusBadgeClass(layanan.status.description)}">${layanan.status.description}</span></td>
-                            <td>
-                                <div class="btn-group-vertical w-100" role="group">
-                                    <button class="btn btn-info btn-sm preview-surat mb-1" data-id="${layanan.id}" title="Preview Surat">
-                                        <i class="fa fa-eye"></i> Preview
-                                    </button>
-                                    ${layanan.status.description === 'Belum Diproses' ? 
-                                        `<button class="btn btn-success btn-sm approve-layanan mb-1" data-id="${layanan.id}" title="Approve Layanan">
-                                            <i class="fa fa-check"></i> Approve
-                                        </button>` : ''
-                                    }
-                                    @if(auth()->id() === 3)
-                                    <button class="btn btn-primary btn-sm admin-approve-layanan mb-1" data-id="${layanan.id}" title="Admin Approve (+1 Status)">
-                                        <i class="fa fa-arrow-up"></i> Admin Approve
-                                    </button>
-                                    @endif
-                                    ${layanan.status_layanan == 8 && !layanan.signed_document_path ? 
-                                        `<button class="btn btn-warning btn-sm upload-signed-doc mb-1" data-id="${layanan.id}" title="Upload Dokumen Ditandatangani">
-                                            <i class="fa fa-upload"></i> Upload Dokumen
-                                        </button>` : ''
-                                    }
-                                    ${layanan.status_layanan == 8 && layanan.signed_document_path ? 
-                                        `<button class="btn btn-primary btn-sm download-signed-doc mb-1" data-id="${layanan.id}" title="Download Dokumen Ditandatangani">
-                                            <i class="fa fa-download"></i> Download
-                                        </button>
-                                        <button class="btn btn-warning btn-sm replace-signed-doc mb-1" data-id="${layanan.id}" title="Ganti Dokumen Ditandatangani">
-                                            <i class="fa fa-refresh"></i> Ganti Dokumen
-                                        </button>` : ''
-                                    }
-                                    <button class="btn btn-warning btn-sm edit-layanan mb-1" data-id="${layanan.id}" title="Edit Layanan">
-                                        <i class="fa fa-edit"></i> Edit
-                                    </button>
-                                    <button class="btn btn-danger btn-sm delete-layanan" data-id="${layanan.id}" title="Hapus Layanan">
-                                        <i class="fa fa-trash"></i> Hapus
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                });
-                $('#data-table-body').html(rows);
+            type: 'GET'
+        },
+        columns: [
+            { data: 0, name: 'id', orderable: true },
+            { data: 1, name: 'jenis_pelayanan_id', orderable: true },
+            { data: 2, name: 'user_id', orderable: false },
+            { data: 3, name: 'created_at', orderable: false },
+            { data: 4, name: 'status_layanan', orderable: true },
+            { data: 5, name: 'action', orderable: false, searchable: false }
+        ],
+        order: [[0, 'desc']],
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+        language: {
+            processing: "Memproses...",
+            lengthMenu: "Tampilkan _MENU_ data per halaman",
+            zeroRecords: "Data tidak ditemukan",
+            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+            infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
+            infoFiltered: "(disaring dari _MAX_ total data)",
+            search: "Cari:",
+            paginate: {
+                first: "Pertama",
+                last: "Terakhir",
+                next: "Selanjutnya",
+                previous: "Sebelumnya"
             }
-        });
-    }
+        },
+        responsive: true,
+        autoWidth: false
+    });
 
     // Function untuk status badge class
     function getStatusBadgeClass(status) {
@@ -331,42 +252,13 @@ $(document).ready(function() {
         }
     }
 
+    // Refresh button functionality
     $('#refreshButton').click(function() {
-        loadDaftarLayanan();
-    });
-
-    // Search functionality
-    $('#example4_filter input').on('keyup', function() {
-        table.search(this.value).draw();
-        var search = this.value;
-        $.ajax({
-            url: "{{ route('layanan.daftar.search', ['search' => ':search']) }}",
-            method: "GET",
-            data: { search: search },
-            success: function(response) {
-                let rows = '';
-                response.forEach((layanan, index) => {
-                    rows += `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${layanan.nama}</td>
-                            <td>${layanan.jenis}</td>
-                            <td>${layanan.deskripsi}</td>
-                            <td>${layanan.status}</td>
-                            <td>
-                                <button class="btn btn-warning btn-sm edit-layanan" data-id="${layanan.id}">Edit <i class="fa fa-edit"></i></button>
-                                <button class="btn btn-danger btn-sm delete-layanan" data-id="${layanan.id}">Hapus <i class="fa fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                $('#data-table-body').html(rows);
-            }
-        });
+        table.ajax.reload();
     });
 
     // Preview surat handler
-    $('#data-table-body').on('click', '.preview-surat', function() {
+    $('#example4').on('click', '.preview-surat', function() {
         var layananId = $(this).data('id');
         
         $.ajax({
@@ -422,13 +314,13 @@ $(document).ready(function() {
     });
 
     // Edit handler
-    $('#data-table-body').on('click', '.edit-layanan', function() {
+    $('#example4').on('click', '.edit-layanan', function() {
         var layananId = $(this).data('id');
         window.location.href = "{{ route('layanan.daftar.edit', ['daftar' => ':layananId']) }}".replace(':layananId', layananId);
     });
 
     // Delete handler
-    $('#data-table-body').on('click', '.delete-layanan', function() {
+    $('#example4').on('click', '.delete-layanan', function() {
         var layananId = $(this).data('id');
         swal({
             title: "Apakah Anda yakin?",
@@ -444,7 +336,7 @@ $(document).ready(function() {
                     method: 'DELETE',
                     success: function(response) {
                         swal("Berhasil!", response.message, "success");
-                        loadDaftarLayanan();
+                        table.ajax.reload();
                     },
                     error: function(xhr) {
                         swal("Error!", "Terjadi kesalahan saat menghapus data.", "error");
@@ -455,7 +347,7 @@ $(document).ready(function() {
     });
 
     // Tambahkan handler untuk approve
-    $('#data-table-body').on('click', '.approve-layanan', function() {
+    $('#example4').on('click', '.approve-layanan', function() {
         var layananId = $(this).data('id');
         swal({
             title: "Apakah Anda yakin?",
@@ -471,7 +363,7 @@ $(document).ready(function() {
                     method: 'POST',
                     success: function(response) {
                         swal("Berhasil!", "Layanan berhasil disetujui", "success");
-                        loadDaftarLayanan();
+                        table.ajax.reload();
                     },
                     error: function(xhr) {
                         swal("Error!", "Terjadi kesalahan saat menyetujui layanan.", "error");
@@ -482,7 +374,7 @@ $(document).ready(function() {
     });
 
     // Tambahkan handler untuk admin approve (increment status +1)
-    $('#data-table-body').on('click', '.admin-approve-layanan', function() {
+    $('#example4').on('click', '.admin-approve-layanan', function() {
         var layananId = $(this).data('id');
         swal({
             title: "Admin Approve",
@@ -524,7 +416,7 @@ $(document).ready(function() {
                     success: function(response) {
                         if (response.success) {
                             swal("Berhasil!", response.message, "success");
-                            loadDaftarLayanan();
+                            table.ajax.reload();
                         } else {
                             swal("Error!", response.message, "error");
                         }
@@ -542,7 +434,7 @@ $(document).ready(function() {
     });
 
     // Handler untuk upload dokumen yang sudah ditandatangani
-    $('#data-table-body').on('click', '.upload-signed-doc', function() {
+    $('#example4').on('click', '.upload-signed-doc', function() {
         var layananId = $(this).data('id');
         $('#layanan_id').val(layananId);
         $('#uploadSignedDocModalLabel').html('<i class="fa fa-upload"></i> Upload Dokumen yang Sudah Ditandatangani');
@@ -553,7 +445,7 @@ $(document).ready(function() {
     });
 
     // Handler untuk ganti dokumen yang sudah ditandatangani
-    $('#data-table-body').on('click', '.replace-signed-doc', function() {
+    $('#example4').on('click', '.replace-signed-doc', function() {
         var layananId = $(this).data('id');
         
         swal({
@@ -591,7 +483,7 @@ $(document).ready(function() {
     });
 
     // Handler untuk download dokumen yang sudah ditandatangani
-    $('#data-table-body').on('click', '.download-signed-doc', function() {
+    $('#example4').on('click', '.download-signed-doc', function() {
         var layananId = $(this).data('id');
         window.open("{{ route('layanan.daftar.download-signed-document', ['id' => ':id']) }}".replace(':id', layananId), '_blank');
     });
@@ -623,7 +515,7 @@ $(document).ready(function() {
                         'Dokumen berhasil diupload!';
                     
                     swal("Berhasil!", successMessage, "success");
-                    loadDaftarLayanan();
+                    table.ajax.reload();
                     $('#uploadSignedDocForm')[0].reset();
                 } else {
                     swal("Error!", response.message, "error");
